@@ -5,7 +5,8 @@ unit PNStack;
 interface
 
 uses
-	StrUtils, PNTypes, SysUtils;
+	StrUtils, SysUtils,
+	PNTypes;
 
 type
 

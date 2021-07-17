@@ -5,7 +5,7 @@ unit PNCalculator;
 interface
 
 uses
-	PNTypes, PNStack;
+	PNCore, PNStack, PNTypes;
 
 function Calculate(parsed: TPNStack; variables: TVariableMap): TNumber;
 
