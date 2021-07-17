@@ -15,7 +15,7 @@ type
 		next: PStackItem;
 	end;
 
-	TStack = class
+	TPNStack = class
 		protected
 			stackHead: PStackItem;
 
@@ -32,12 +32,12 @@ type
 			procedure Clear();
 
 			function ToString(): String;
-			class function FromString(input: String): TStack;
+			class function FromString(input: String): TPNStack;
 	end;
 
 implementation
 
-procedure TStack.Push(item: TItem);
+procedure TPNStack.Push(item: TItem);
 var
 	stackItem: TStackItem;
 
@@ -48,7 +48,7 @@ begin
 	stackHead := @stackItem;
 end;
 
-function TStack.Pop(): TItem;
+function TPNStack.Pop(): TItem;
 var
 	stackItem: TStackItem;
 
@@ -61,18 +61,18 @@ begin
 	result := stackItem.value;
 end;
 
-function TStack.Empty(): Boolean;
+function TPNStack.Empty(): Boolean;
 begin
 	result := stackHead = nil;
 end;
 
-procedure TStack.Clear();
+procedure TPNStack.Clear();
 begin
 	stackHead := nil;
 end;
 
 // destroys the stack in the process
-function TStack.ToString(): String;
+function TPNStack.ToString(): String;
 var
 	item: TItem;
 	itemString: String;
@@ -93,9 +93,9 @@ begin
 end;
 
 // allocates a new object
-class function TStack.FromString(input: String): TStack;
+class function TPNStack.FromString(input: String): TPNStack;
 var
-	stack: TStack;
+	stack: TPNStack;
 	item: TItem;
 
 	split: Array of String;
@@ -105,7 +105,7 @@ var
 	valCode: Word;
 
 begin
-	stack := TStack.Create;
+	stack := TPNStack.Create;
 	split := SplitString(input, separatorChar);
 
 	for part in split do begin

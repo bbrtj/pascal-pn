@@ -3,7 +3,7 @@ program PNCLI;
 {$mode objfpc}{$H+}{$J-}
 
 uses
-	PN;
+	PNCalculator, PNParser;
 
 begin
 	WriteLn('Hello World!');
