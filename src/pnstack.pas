@@ -23,6 +23,7 @@ type
 			const
 				separatorChar = '#';
 				operatorPrefixChar = '+';
+				variablePrefixChar = '$';
 
 			procedure Push(item: TItem);
 			function Pop(): TItem;
@@ -70,15 +71,28 @@ begin
 	stackHead := nil;
 end;
 
+// destroys the stack in the process
 function TStack.ToString(): String;
 var
-	output: String;
+	item: TItem;
+	itemString: String;
 
 begin
-	output := '';
-	result := output
+	result := '';
+	while not self.Empty() do begin
+		item := self.Pop();
+
+		case item.itemtype of
+			itNumber: itemString := FloatToStr(item.number);
+			itVariable: itemString := item.variable;
+			itOperator: itemString := item.&operator;
+		end;
+
+		result := itemString + separatorChar + result;
+	end;
 end;
 
+// allocates a new object
 class function TStack.FromString(input: String): TStack;
 var
 	stack: TStack;
@@ -95,20 +109,26 @@ begin
 	split := SplitString(input, separatorChar);
 
 	for part in split do begin
-		Val(part, valValue, valCode);
 
-		if valCode = 0 then begin
-			item.itemType := itNumber;
-			item.number := valValue;
+		if StartsStr(variablePrefixChar, part) then begin
+			item.itemType := itVariable;
+			item.variable := part;
 		end
-		else if StartsStr(operatorPrefixChar, part) then begin
 
+		else if StartsStr(operatorPrefixChar, part) then begin
 			item.itemType := itOperator;
 			item.&operator := Copy(part, 2, Length(part));
 		end
+
 		else begin
-			item.itemType := itVariable;
-			item.variable := part;
+			Val(part, valValue, valCode);
+
+			if valCode = 0 then begin
+				item.itemType := itNumber;
+				item.number := valValue;
+			end
+			else
+				raise Exception.Create('Exported data corrupted: not a number');
 		end;
 
 		stack.Push(item);
