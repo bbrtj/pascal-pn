@@ -2,8 +2,6 @@ unit PNTypes;
 
 {$mode objfpc}{$H+}{$J-}
 
-{$define Operator := ClassOperator }
-
 interface
 
 uses
