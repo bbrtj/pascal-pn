@@ -2,6 +2,8 @@ unit RPNTypes;
 
 {$mode objfpc}{$H+}{$J-}
 
+{$define Operator := ClassOperator }
+
 interface
 
 uses
@@ -10,13 +12,15 @@ uses
 type
 	TNumber = Double;
 	TVariable = String[15];
+	TOperator = String[15];
 	TVariableMap = specialize TFPGMap<TVariable, TNumber>;
 
-	TItemType = (Constant, Variable);
+	TItemType = (itNumber, itVariable, itOperator);
 	TItem = packed record
 		case itemType: TItemType of
-			Constant: (number: TNumber);
-			Variable: (variable: TVariable);
+			itNumber: (number: TNumber);
+			itVariable: (variable: TVariable);
+			itOperator: (&operator: TOperator);
 	end;
 
 implementation
