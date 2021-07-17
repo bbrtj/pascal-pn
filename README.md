@@ -56,6 +56,22 @@ cat exported.txt | perl -pn -e '
 '
 ```
 
+## Building
+
+Free Pascal Compiler with Object Pascal RTL is required to build.
+
+Makefile contents should suffice for most building needs. To build an optimized CLI binary:
+
+```
+O_LEVEL=3 make build
+```
+
+To build an optimized shared library:
+
+```
+O_LEVEL=3 make build-library
+```
+
 ## Author and License
 
 Copyright Bartosz Jarzyna. Licensed with 2-clause BSD license.
