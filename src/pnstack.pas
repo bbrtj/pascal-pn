@@ -53,7 +53,7 @@ var
 	stackItem: TStackItem;
 
 begin
-	if stackHead = nil then
+	if self.Empty() then
 		raise Exception.Create('Stack is empty');
 
 	stackItem := stackHead^;
