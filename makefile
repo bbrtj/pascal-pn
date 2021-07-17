@@ -4,13 +4,13 @@ SOURCE_DIR ?= src
 FPC_FLAGS ?= "-FE$(BUILD_DIR) -Fu$(SOURCE_DIR)"
 
 test: build
-	./rpncli
+	$(BUILD_DIR)/cli
 
 build: prepare
-	$(FPC) $(FPC_FLAGS) rpncli.pas
+	$(FPC) $(FPC_FLAGS) endpoints/cli.pas
 
 build-library: prepare
-	$(FPC) $(FPC_FLAGS) rpnlib.pas
+	$(FPC) $(FPC_FLAGS) endpoints/lib.pas
 
 prepare:
 	mkdir -p $(BUILD_DIR)
