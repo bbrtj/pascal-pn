@@ -1,11 +1,11 @@
-unit RPNStack;
+unit PNStack;
 
 {$mode objfpc}{$H+}{$J-}
 
 interface
 
 uses
-	StrUtils, RPNTypes, SysUtils;
+	StrUtils, PNTypes, SysUtils;
 
 type
 

@@ -1,4 +1,4 @@
-unit RPNTypes;
+unit PNTypes;
 
 {$mode objfpc}{$H+}{$J-}
 

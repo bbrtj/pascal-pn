@@ -1,11 +1,11 @@
-unit RPN;
+unit PN;
 
 {$mode objfpc}{$H+}{$J-}
 
 interface
 
 uses
-	RPNTypes, RPNStack;
+	PNTypes, PNStack;
 
 function Parse(input: String): TStack;
 function Calculate(parsed: TStack; variables: TVariableMap): TNumber;

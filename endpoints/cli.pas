@@ -1,9 +1,9 @@
-program RPNCLI;
+program PNCLI;
 
 {$mode objfpc}{$H+}{$J-}
 
 uses
-	RPN;
+	PN;
 
 begin
 	WriteLn('Hello World!');
