@@ -80,8 +80,10 @@ begin
 		end;
 
 	except
-		on err: Exception do
+		on err: Exception do begin
 			WriteLn(StdErr, err.Message);
+			ExitCode := 1;
+		end;
 	end;
 end.
 
