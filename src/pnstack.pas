@@ -70,7 +70,7 @@ var
 	stackItem: TStackItem;
 
 begin
-	if self.Empty() then
+	if Empty() then
 		raise Exception.Create('Stack is empty');
 
 	stackItem := stackHead^;
@@ -83,7 +83,7 @@ end;
 { Returns the top of the stack without poping it }
 function TPNStack.Top(): TItem;
 begin
-	if self.Empty() then
+	if Empty() then
 		raise Exception.Create('Stack is empty');
 
 	result := stackHead^.value;
@@ -116,16 +116,19 @@ var
 
 begin
 	result := '';
-	while not self.Empty() do begin
-		item := self.Pop();
+	while not Empty() do begin
+		item := Pop();
 
 		case item.itemtype of
 			itNumber: itemString := FloatToStr(item.number);
-			itVariable: itemString := item.variable;
-			itOperator: itemString := item.&operator;
+			itVariable: itemString := variablePrefixChar + item.variable;
+			itOperator: itemString := operatorPrefixChar + item.&operator;
 		end;
 
-		result := itemString + separatorChar + result;
+		result := itemString + result;
+
+		if not Empty() then
+			result := separatorChar + result;
 	end;
 end;
 
