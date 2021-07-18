@@ -2,6 +2,10 @@ unit PNStack;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	Stack implementation, the main data structure used by PN
+}
+
 interface
 
 uses

@@ -2,6 +2,10 @@ program PNCLI;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	CLI program using the PN system
+}
+
 uses
 	PN;
 

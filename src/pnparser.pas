@@ -2,6 +2,10 @@ unit PNParser;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	Code responsible for transforming a string into a PN stack
+}
+
 interface
 
 uses

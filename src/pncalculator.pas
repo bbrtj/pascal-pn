@@ -2,6 +2,10 @@ unit PNCalculator;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	Code responsible for getting the results of the calculation
+}
+
 interface
 
 uses

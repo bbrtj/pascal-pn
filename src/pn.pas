@@ -2,6 +2,10 @@ unit PN;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	The main class used for high level access to PN routines
+}
+
 interface
 
 uses

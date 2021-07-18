@@ -2,11 +2,11 @@ unit PNTypes;
 
 {$mode objfpc}{$H+}{$J-}
 
-interface
-
 {
 	Base types used by the Polish Notation implementation
 }
+
+interface
 
 type
 	TNumber = Double;

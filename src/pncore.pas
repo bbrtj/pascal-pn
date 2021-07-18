@@ -2,6 +2,10 @@ unit PNCore;
 
 {$mode objfpc}{$H+}{$J-}
 
+{
+	Core of the PN system, which happens to be the definition of available operators
+}
+
 interface
 
 uses
