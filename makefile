@@ -10,9 +10,6 @@ build: prepare
 build-library: prepare
 	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) endpoints/lib.pas
 
-run: build
-	$(BUILD_DIR)/cli
-
 debug: prepare
 	$(FPC) -g -gl $(FPC_FLAGS) endpoints/cli.pas
 	gdb -ex run $(BUILD_DIR)/cli
