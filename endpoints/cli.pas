@@ -21,5 +21,9 @@ begin
 
 	calc.ImportString('+-#+^#5#2#+*#2#6.0E+1');
 	WriteLn(calc.GetResult());
+
+	calc.ImportString('+*#3#$test');
+	calc.DefineVariable('test', 80);
+	WriteLn(calc.GetResult());
 end.
 

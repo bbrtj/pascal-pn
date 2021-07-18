@@ -140,17 +140,23 @@ var
 	valValue: TNumber;
 	valCode: Word;
 
+	function SkipFirstChar(): String;
+	begin
+		result := Copy(part, 2, Length(part));
+	end;
+
 begin
 	stack := TPNStack.Create;
 	split := SplitString(input, separatorChar);
 
+
 	for part in split do begin
 
 		if StartsStr(variablePrefixChar, part) then
-			stack.Push(MakeItem(TVariable(part)))
+			stack.Push(MakeItem(TVariable(SkipFirstChar())))
 
 		else if StartsStr(operatorPrefixChar, part) then
-			stack.Push(MakeItem(TOperator(Copy(part, 2, Length(part)))))
+			stack.Push(MakeItem(TOperator(SkipFirstChar())))
 
 		else begin
 			Val(part, valValue, valCode);

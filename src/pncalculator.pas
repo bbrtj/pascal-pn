@@ -56,7 +56,6 @@ begin
 end;
 
 { Tries to fetch a variable value from TVariableMap }
-{ TODO check whether the value was found }
 function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem;
 var
 	varAssignment: TVariableAssignment;
@@ -64,10 +63,11 @@ var
 begin
 	for varAssignment in variables do begin
 		if item.variable = varAssignment.variable then begin
-			result := MakeItem(varAssignment.number);
-			break;
+			Exit(MakeItem(varAssignment.number));
 		end;
 	end;
+
+	raise Exception.Create('Variable ' + item.variable + ' was not defined');
 end;
 
 { Calculates a result from a Polish notation stack }
