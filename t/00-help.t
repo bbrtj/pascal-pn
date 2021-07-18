@@ -9,6 +9,8 @@ use CLIHelper;
 # Check whether the CLI application works at all by printing its help message
 #############################################################################
 
-like run_good('--help'), qr/Usage:/, 'help printed ok';
+subtest 'show help' => sub {
+	like run_good('--help'), qr/Usage:/, 'help printed ok';
+};
 
 done_testing;
