@@ -75,8 +75,8 @@ begin
 				WriteLn('--export: export Polish notation instead of calculating');
 				WriteLn('--var str num: assings value num to variable str, can be specified multiple times');
 			end;
-			aExport: WriteLn(calc.ExportString());
-			aCalculate: WriteLn(calc.GetResult());
+			aExport: Write(calc.ExportString());
+			aCalculate: Write(calc.GetResult());
 		end;
 
 	except
