@@ -32,7 +32,7 @@ type
 			function Empty(): Boolean;
 			procedure Clear();
 
-			function ToString(): String;
+			function ToString(): String; override;
 			class function FromString(const input: String): TPNStack;
 	end;
 
@@ -97,7 +97,6 @@ end;
 class function TPNStack.FromString(const input: String): TPNStack;
 var
 	stack: TPNStack;
-	item: TItem;
 
 	split: Array of String;
 	part: String;
@@ -111,28 +110,20 @@ begin
 
 	for part in split do begin
 
-		if StartsStr(variablePrefixChar, part) then begin
-			item.itemType := itVariable;
-			item.variable := part;
-		end
+		if StartsStr(variablePrefixChar, part) then
+			stack.Push(MakeItem(TVariable(part)))
 
-		else if StartsStr(operatorPrefixChar, part) then begin
-			item.itemType := itOperator;
-			item.&operator := Copy(part, 2, Length(part));
-		end
+		else if StartsStr(operatorPrefixChar, part) then
+			stack.Push(MakeItem(TOperator(Copy(part, 2, Length(part)))))
 
 		else begin
 			Val(part, valValue, valCode);
 
-			if valCode = 0 then begin
-				item.itemType := itNumber;
-				item.number := valValue;
-			end
+			if valCode = 0 then
+				stack.Push(MakeItem(valValue))
 			else
 				raise Exception.Create('Exported data corrupted: not a number');
 		end;
-
-		stack.Push(item);
 	end;
 
 	result := stack;
