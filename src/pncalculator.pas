@@ -7,11 +7,11 @@ interface
 uses
 	PNCore, PNStack, PNTypes;
 
-function Calculate(parsed: TPNStack; variables: TVariableMap): TNumber;
+function Calculate(const parsed: TPNStack; const variables: TVariableMap): TNumber;
 
 implementation
 
-function Calculate(parsed: TPNStack; variables: TVariableMap): TNumber;
+function Calculate(const parsed: TPNStack; const variables: TVariableMap): TNumber;
 begin
 end;
 

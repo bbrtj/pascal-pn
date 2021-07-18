@@ -26,19 +26,19 @@ type
 				operatorPrefixChar = '+';
 				variablePrefixChar = '$';
 
-			procedure Push(item: TItem);
+			procedure Push(const item: TItem);
 			function Pop(): TItem;
 
 			function Empty(): Boolean;
 			procedure Clear();
 
 			function ToString(): String;
-			class function FromString(input: String): TPNStack;
+			class function FromString(const input: String): TPNStack;
 	end;
 
 implementation
 
-procedure TPNStack.Push(item: TItem);
+procedure TPNStack.Push(const item: TItem);
 var
 	stackItem: TStackItem;
 
@@ -94,7 +94,7 @@ begin
 end;
 
 // allocates a new object
-class function TPNStack.FromString(input: String): TPNStack;
+class function TPNStack.FromString(const input: String): TPNStack;
 var
 	stack: TPNStack;
 	item: TItem;

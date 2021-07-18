@@ -7,16 +7,16 @@ interface
 uses
 	PNCore, PNStack, PNTypes;
 
-function Parse(input: String): TPNStack;
+function Parse(const input: String): TPNStack;
 
 implementation
 
 // each bracket pair creates a new context for ParsePartial
-procedure ParsePartial(context: String; stack: TPNStack);
+procedure ParsePartial(const context: String; const stack: TPNStack);
 begin
 end;
 
-function Parse(input: String): TPNStack;
+function Parse(const input: String): TPNStack;
 begin
 	result := TPNStack.Create;
 	ParsePartial(input, result);

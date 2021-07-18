@@ -7,7 +7,7 @@ uses
 	PNStack, PNTypes;
 
 type
-	TOperationHandler = function (a: TNumber; b: TNumber): TNumber;
+	TOperationHandler = function (const a: TNumber; const b: TNumber): TNumber;
 	TOperationsMap = specialize TFPGMap<TOperator, TOperationHandler>;
 
 implementation
