@@ -5,7 +5,11 @@ program PNCLI;
 uses
 	PN;
 
+var
+	calc: TPN;
 begin
-	WriteLn('Hello World!');
+	calc := TPN.Create;
+	calc.ImportString('++#2#+*#3#4');
+	WriteLn(calc.GetResult());
 end.
 

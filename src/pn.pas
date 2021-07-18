@@ -19,11 +19,9 @@ type
 			constructor Create;
 			destructor Destroy; override;
 
-{
 		procedure ParseString(const input: String);
 		procedure ImportString(const exported: String);
-		function getResult(): TNumber;
-}
+		function GetResult(): TNumber;
 
 	end;
 
@@ -43,6 +41,20 @@ begin
 		FreeAndNil(currentStack);
 
 	inherited;
+end;
+
+procedure TPN.ParseString(const input: String);
+begin
+end;
+
+procedure TPN.ImportString(const exported: String);
+begin
+	currentStack := TPNStack.FromString(exported);
+end;
+
+function TPN.GetResult(): TNumber;
+begin
+	result := Calculate(currentStack, [], operationsMap);
 end;
 
 end.

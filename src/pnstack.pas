@@ -28,6 +28,7 @@ type
 
 			procedure Push(const item: TItem);
 			function Pop(): TItem;
+			function Top(): TItem;
 
 			function Empty(): Boolean;
 			procedure Clear();
@@ -60,6 +61,14 @@ begin
 	stackItem := stackHead^;
 	stackHead := stackItem.next;
 	result := stackItem.value;
+end;
+
+function TPNStack.Top(): TItem;
+begin
+	if self.Empty() then
+		raise Exception.Create('Stack is empty');
+
+	result := stackHead^.value;
 end;
 
 function TPNStack.Empty(): Boolean;
