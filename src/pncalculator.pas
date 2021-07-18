@@ -46,8 +46,7 @@ begin
 			raise Exception.Create('Invalid Polish notation');
 	end;
 
-	// reverse argument order, since the stack is in reverse to original notation
-	result := MakeItem(op(args[1].number, args[0].number));
+	result := MakeItem(op(args[0].number, args[1].number));
 end;
 
 function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem;

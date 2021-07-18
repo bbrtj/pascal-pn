@@ -26,6 +26,8 @@ type
 				operatorPrefixChar = '+';
 				variablePrefixChar = '$';
 
+			constructor Create;
+
 			procedure Push(const item: TItem);
 			function Pop(): TItem;
 			function Top(): TItem;
@@ -39,6 +41,11 @@ type
 
 implementation
 
+constructor TPNStack.Create;
+begin
+	stackHead := nil;
+end;
+
 procedure TPNStack.Push(const item: TItem);
 var
 	stackItem: TStackItem;
@@ -47,7 +54,8 @@ begin
 	stackItem.value := item;
 	stackItem.next := stackHead;
 
-	stackHead := @stackItem;
+	New(stackHead);
+	stackHead^ := stackItem;
 end;
 
 function TPNStack.Pop(): TItem;
@@ -59,6 +67,8 @@ begin
 		raise Exception.Create('Stack is empty');
 
 	stackItem := stackHead^;
+	Dispose(stackHead);
+
 	stackHead := stackItem.next;
 	result := stackItem.value;
 end;
@@ -77,8 +87,15 @@ begin
 end;
 
 procedure TPNStack.Clear();
+var
+	nextStackHead: PStackItem;
+
 begin
-	stackHead := nil;
+	while stackHead <> nil do begin
+		nextStackHead := stackHead^.next;
+		Dispose(stackHead);
+		stackHead := nextStackHead;
+	end;
 end;
 
 // destroys the stack in the process
