@@ -32,16 +32,16 @@ This program can only export and import from its own custom format:
 
 ```
 2 + 2
-  ++#2#2
+  o+#2#2
 
 2 + 3 * a
-  ++#2#+*#3#$a
+  o+#2#o*#3#va
 ```
 
 The idea is that it unambigously describes the calculation:
 - stack items are separated by a `#` (hash) character, which should be less error prone than a space character
-- any stack item prefixed with a `+` (plus) character is an operation
-- any stack item prefixed with a `$` (dollar) sign is a variable
+- any stack item prefixed with a `o` character is an operation
+- any stack item prefixed with a `v` character is a variable
 - any other stack item must contain a number, and is considered a constant
 
 Since there's no need to do any parsing on such string, its importing should be very fast. This exported format can be stored and only imported on demand to perform calculations without any need for parsing the original calculation in standard notation.
@@ -50,9 +50,9 @@ Transforming this format into a regular Polish notation should be easy enough wi
 
 ```
 cat exported.txt | perl -pn -e '
-	s/^\+//;
-	s/(?<=#)\+//g;
-	y/#$/ /d;
+	s/^[ov]//;
+	s/(?<=#)[ov]//g;
+	y/#/ /;
 '
 ```
 

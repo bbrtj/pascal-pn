@@ -27,8 +27,8 @@ type
 		public
 			const
 				separatorChar = '#';
-				operatorPrefixChar = '+';
-				variablePrefixChar = '$';
+				operatorPrefixChar = 'o';
+				variablePrefixChar = 'v';
 
 			constructor Create;
 
