@@ -24,6 +24,8 @@ type
 			currentStack: TPNStack;
 			variableMap: TVariableMap;
 
+			procedure SetStack(const stack: TPNStack);
+
 		public
 			constructor Create;
 			destructor Destroy; override;
@@ -61,10 +63,19 @@ begin
 	inherited;
 end;
 
+{ Sets a new stack with extra care to free the old one }
+procedure TPN.SetStack(const stack: TPNStack);
+begin
+	if currentStack <> nil then
+		FreeAndNil(currentStack);
+
+	currentStack := stack;
+end;
+
 { Imports a string using TPNStack }
 procedure TPN.ImportString(const exported: String);
 begin
-	currentStack := TPNStack.FromString(exported);
+	SetStack(TPNStack.FromString(exported));
 end;
 
 { Exports a the TPNStack to a string }
@@ -93,6 +104,7 @@ end;
 { Parses a string via PNParser }
 procedure TPN.ParseString(const input: String);
 begin
+	SetStack(Parse(input, operationsMap));
 end;
 
 { Calculates the result using PNCalculator }
