@@ -21,36 +21,43 @@ function GetOperationsMap(): TOperationsMap;
 
 implementation
 
+{ Handler for + }
 function OpAddition(const a, b: TNumber): TNumber;
 begin
 	result := a + b;
 end;
 
+{ Handler for - }
 function OpSubstraction(const a, b: TNumber): TNumber;
 begin
 	result := a - b;
 end;
 
+{ Handler for * }
 function OpMultiplication(const a, b: TNumber): TNumber;
 begin
 	result := a * b;
 end;
 
+{ Handler for / }
 function OpDivision(const a, b: TNumber): TNumber;
 begin
 	result := a / b;
 end;
 
+{ Handler for ^ }
 function OpPower(const a, b: TNumber): TNumber;
 begin
 	result := a ** b;
 end;
 
+{ Handler for % }
 function OpModulo(const a, b: TNumber): TNumber;
 begin
 	result := FMod(a, b);
 end;
 
+{ Creates a new TOperationInfo }
 function MakeInfo(const handler: TOperationHandler; const priority: Byte): TOperationInfo;
 begin
 	result.handler := handler;

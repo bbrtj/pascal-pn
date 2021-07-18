@@ -15,7 +15,7 @@ begin
 	calc.ImportString('+-#2#1');
 	WriteLn(calc.GetResult());
 
-	calc.ImportString('+-#+^#5#2#+*#2#6');
+	calc.ImportString('+-#+^#5#2#+*#2#6.0E+1');
 	WriteLn(calc.GetResult());
 end.
 

@@ -41,11 +41,13 @@ type
 
 implementation
 
+{}
 constructor TPNStack.Create;
 begin
 	stackHead := nil;
 end;
 
+{ Pushes on top of the stack }
 procedure TPNStack.Push(const item: TItem);
 var
 	stackItem: TStackItem;
@@ -58,6 +60,7 @@ begin
 	stackHead^ := stackItem;
 end;
 
+{ Pops the top of the stack }
 function TPNStack.Pop(): TItem;
 var
 	stackItem: TStackItem;
@@ -73,6 +76,7 @@ begin
 	result := stackItem.value;
 end;
 
+{ Returns the top of the stack without poping it }
 function TPNStack.Top(): TItem;
 begin
 	if self.Empty() then
@@ -81,11 +85,13 @@ begin
 	result := stackHead^.value;
 end;
 
+{ Checks whether the stack is empty }
 function TPNStack.Empty(): Boolean;
 begin
 	result := stackHead = nil;
 end;
 
+{ Clears the stack }
 procedure TPNStack.Clear();
 var
 	nextStackHead: PStackItem;
@@ -98,7 +104,7 @@ begin
 	end;
 end;
 
-// destroys the stack in the process
+{ Exports to string, destroys the stack in the process }
 function TPNStack.ToString(): String;
 var
 	item: TItem;
@@ -119,7 +125,7 @@ begin
 	end;
 end;
 
-// allocates a new object
+{ Imports from string, allocates a new object }
 class function TPNStack.FromString(const input: String): TPNStack;
 var
 	stack: TPNStack;
@@ -148,7 +154,7 @@ begin
 			if valCode = 0 then
 				stack.Push(MakeItem(valValue))
 			else
-				raise Exception.Create('Exported data corrupted: not a number');
+				raise Exception.Create('Data corrupted: not a number (' + part + ')');
 		end;
 	end;
 

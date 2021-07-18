@@ -35,24 +35,28 @@ function MakeItem(const value: TOperator): TItem;
 
 implementation
 
+{ Creates TVariableAssignment }
 function MakeVariableAssignment(const variable: TVariable; const number: TNumber): TVariableAssignment;
 begin
 	result.variable := variable;
 	result.number := number;
 end;
 
+{ Creates TItem from TNumber }
 function MakeItem(const value: TNumber): TItem;
 begin
 	result.itemType := itNumber;
 	result.number := value;
 end;
 
+{ Creates TItem from TVariable }
 function MakeItem(const value: TVariable): TItem;
 begin
 	result.itemType := itVariable;
 	result.variable := value;
 end;
 
+{ Creates TItem from TOperator }
 function MakeItem(const value: TOperator): TItem;
 begin
 	result.itemType := itOperator;

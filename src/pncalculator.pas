@@ -16,7 +16,8 @@ function Calculate(
 
 implementation
 
-function getOperationInfo(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler;
+{ Gets an operation handler from the operator found on the stack }
+function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler;
 var
 	found: Boolean;
 	info: TOperationInfo;
@@ -30,6 +31,7 @@ begin
 	result := info.handler;
 end;
 
+{ Performs an operation on a stack }
 function DoOperation(const op: TOperationHandler; const stack: TPNStack): TItem;
 var
 	args: Array[0 .. 1] of TItem;
@@ -49,6 +51,8 @@ begin
 	result := MakeItem(op(args[0].number, args[1].number));
 end;
 
+{ Tries to fetch a variable value from TVariableMap }
+{ TODO check whether the value was found }
 function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem;
 var
 	varAssignment: TVariableAssignment;
@@ -62,6 +66,7 @@ begin
 	end;
 end;
 
+{ Calculates a result from a Polish notation stack }
 function Calculate(
 	const mainStack: TPNStack;
 	const variables: TVariableMap;
@@ -82,7 +87,7 @@ begin
 		item := mainStack.Pop();
 
 		if item.itemType = itOperator then
-			localStack.Push(DoOperation(getOperationInfo(item, operationsMap), localStack))
+			localStack.Push(DoOperation(getOperationHandler(item, operationsMap), localStack))
 
 		else begin
 			if item.itemType = itVariable then
