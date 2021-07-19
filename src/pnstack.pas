@@ -149,9 +149,6 @@ var
 	split: Array of String;
 	part: String;
 
-	valValue: TNumber;
-	valCode: Word;
-
 	function SkipFirstChar(): String;
 	begin
 		result := Copy(part, 2, Length(part));
@@ -170,14 +167,8 @@ begin
 		else if StartsStr(operatorPrefixChar, part) then
 			stack.Push(MakeItem(TOperator(SkipFirstChar())))
 
-		else begin
-			Val(part, valValue, valCode);
-
-			if valCode = 0 then
-				stack.Push(MakeItem(valValue))
-			else
-				raise Exception.Create('Data corrupted: not a number (' + part + ')');
-		end;
+		else
+			stack.Push(MakeItem(StrToFloat(part)));
 	end;
 
 	result := stack;

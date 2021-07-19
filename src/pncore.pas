@@ -25,6 +25,7 @@ function GetOperationsMap(): TOperationsMap;
 
 implementation
 
+{ Get the next argument from the stack, raise an exception if not possible }
 function NextArg(const stack: TPNStack): TNumber;
 var
 	popped: TItem;
