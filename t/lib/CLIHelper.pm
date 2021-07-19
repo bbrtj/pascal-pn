@@ -14,7 +14,8 @@ sub get_cmd
 	die 'Program not yet compiled or not executable'
 		unless -x PROGRAM_PATH;
 
-	return join ' ', PROGRAM_PATH, @_;
+	return join ' ', PROGRAM_PATH,
+		map { / / ? "'$_'" : $_ } @_;
 }
 
 sub run
