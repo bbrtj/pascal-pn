@@ -31,6 +31,7 @@ type
 				variablePrefixChar = 'v';
 
 			constructor Create;
+			destructor Destroy; override;
 
 			procedure Push(const item: TItem);
 			function Pop(): TItem;
@@ -49,6 +50,12 @@ implementation
 constructor TPNStack.Create;
 begin
 	stackHead := nil;
+end;
+
+{}
+destructor TPNStack.Destroy;
+begin
+	Clear();
 end;
 
 { Pushes on top of the stack }
