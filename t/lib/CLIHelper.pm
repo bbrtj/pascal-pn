@@ -27,6 +27,7 @@ sub run
 
 	my $data = qx($cmd);
 
+	note $data;
 	return $data;
 }
 
