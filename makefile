@@ -1,7 +1,7 @@
 FPC ?= fpc
 BUILD_DIR ?= build
 SOURCE_DIR ?= src
-FPC_FLAGS ?= "-v0we -FE$(BUILD_DIR) -Fu$(SOURCE_DIR)"
+FPC_FLAGS ?= -v0web -Sic -FE$(BUILD_DIR) -Fu$(SOURCE_DIR)
 O_LEVEL ?= 1
 
 build: prepare
