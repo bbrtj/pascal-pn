@@ -21,6 +21,7 @@ subtest 'valid strings' => sub {
 		'vo',
 		'ov#vo#vo',
 		'o+#2#2',
+		'o+#2.01#2.001',
 		'o*#va#vb#o-#3',
 	) {
 		is run_good('-i', $case, '-e'), $case, "$case export/import ok";

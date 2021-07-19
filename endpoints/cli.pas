@@ -76,7 +76,7 @@ begin
 				WriteLn('--var str num: assings value num to variable str, can be specified multiple times');
 			end;
 			aExport: Write(calc.ExportString());
-			aCalculate: Write(calc.GetResult());
+			aCalculate: Write(Format('%G', [calc.GetResult()]));
 		end;
 
 	except

@@ -9,6 +9,10 @@ use CLIHelper;
 # Check whether the CLI application works at all by printing its help message
 #############################################################################
 
+subtest 'not enough parameters' => sub {
+	like run_bad(), qr/Nothing to calculate/, 'empty command line ok';
+};
+
 subtest 'show help' => sub {
 	like run_good('--help'), qr/Usage:/, 'help printed ok';
 };
