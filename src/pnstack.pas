@@ -49,6 +49,7 @@ implementation
 {}
 constructor TPNStack.Create;
 begin
+	inherited;
 	stackHead := nil;
 end;
 
@@ -56,6 +57,7 @@ end;
 destructor TPNStack.Destroy;
 begin
 	Clear();
+	inherited;
 end;
 
 { Pushes on top of the stack }

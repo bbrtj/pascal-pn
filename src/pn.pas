@@ -58,9 +58,7 @@ begin
 	FreeAndNil(operationsMap);
 	SetLength(variableMap, 0);
 
-	if currentStack <> nil then
-		FreeAndNil(currentStack);
-
+	SetStack(nil);
 	inherited;
 end;
 
@@ -111,6 +109,9 @@ end;
 { Calculates the result using PNCalculator }
 function TPN.GetResult(): TNumber;
 begin
+	if currentStack = nil then
+		raise Exception.Create('Nothing to calculate');
+
 	result := Calculate(currentStack, variableMap, operationsMap);
 end;
 
