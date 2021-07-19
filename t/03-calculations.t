@@ -1,0 +1,27 @@
+use strict;
+use warnings;
+use Test::More;
+
+use lib 't/lib';
+use CLIHelper;
+
+#############################################################################
+# Check if calculations from imported strings yield the right results
+#############################################################################
+
+subtest 'regular calculations' => sub {
+	for my $case (
+		['6.66', qr/6\.66(0+.)?/], # possible floating point precision artifact
+		['o/#20#3', qr/6\.6+./], # insufficient floating point precision
+		['o*#3#o/#20#3', qr/20$/], # back into an integer
+		['o*#-0.01#100', qr/-1$/], # positive * negative
+		['o^#-5#2', qr/25$/], # negative ^ even
+		['o-#-0.1#-0.1', qr/0$/], # negative - negative
+	) {
+		my $result = run_good('-i', $case->[0]);
+		like $result, qr/^$case->[1]/, "calculation $case->[0] result ok";
+	}
+};
+
+
+done_testing;

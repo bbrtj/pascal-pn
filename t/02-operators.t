@@ -6,7 +6,7 @@ use lib 't/lib';
 use CLIHelper;
 
 #############################################################################
-# Check if calculations from imported strings yield the right results
+# Check if operators are defined and seem to do the right thing
 #############################################################################
 
 subtest 'check operators' => sub {
@@ -21,6 +21,5 @@ subtest 'check operators' => sub {
 		like $result, qr/^$case->[1]/, "operator in $case->[0] ok";
 	}
 };
-
 
 done_testing;
