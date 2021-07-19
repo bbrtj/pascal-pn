@@ -17,13 +17,14 @@ type
 	TPN = class
 		private
 			const variableMapSizeStep = 5;
-			var variableMapMax: Integer;
 
 		protected
 			operationsMap: TOperationsMap;
-			currentStack: TPNStack;
-			variableMap: TVariableMap;
 
+			variableMap: TVariableMap;
+			variableMapMax: Integer;
+
+			currentStack: TPNStack;
 			procedure SetStack(const stack: TPNStack);
 
 		public
