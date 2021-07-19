@@ -37,22 +37,8 @@ end;
 
 { Performs an operation on a stack }
 function DoOperation(const op: TOperationHandler; const stack: TPNStack): TItem;
-var
-	args: Array[0 .. 1] of TItem;
-	current: Integer;
-
 begin
-	for current := Low(args) to High(args) do begin
-		if stack.Empty() then
-			raise Exception.Create('Invalid Polish notation');
-
-		args[current] := stack.Pop();
-
-		if args[current].itemType <> itNumber then
-			raise Exception.Create('Invalid Polish notation');
-	end;
-
-	result := MakeItem(op(args[0].number, args[1].number));
+	result := MakeItem(op(stack));
 end;
 
 { Tries to fetch a variable value from TVariableMap }

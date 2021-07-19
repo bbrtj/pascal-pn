@@ -9,11 +9,11 @@ unit PNCore;
 interface
 
 uses
-	fgl, Math,
+	fgl, Math, SysUtils,
 	PNStack, PNTypes;
 
 type
-	TOperationHandler = function (const a, b: TNumber): TNumber;
+	TOperationHandler = function (const stack: TPNStack): TNumber;
 	TOperationInfo = packed record
 		handler: TOperationHandler;
 		priority: Byte;
@@ -25,40 +25,62 @@ function GetOperationsMap(): TOperationsMap;
 
 implementation
 
-{ Handler for + }
-function OpAddition(const a, b: TNumber): TNumber;
+function NextArg(const stack: TPNStack): TNumber;
+var
+	popped: TItem;
+
 begin
-	result := a + b;
+	if stack.Empty() then
+		raise Exception.Create('Invalid Polish notation');
+
+	popped := stack.Pop();
+
+	if popped.itemType <> itNumber then
+		raise Exception.Create('Invalid Polish notation');
+
+	result := popped.number;
+end;
+
+{ Handler for + }
+function OpAddition(const stack: TPNStack): TNumber;
+begin
+	result := NextArg(stack);
+	result := result + NextArg(stack);
 end;
 
 { Handler for - }
-function OpSubstraction(const a, b: TNumber): TNumber;
+function OpSubstraction(const stack: TPNStack): TNumber;
 begin
-	result := a - b;
+	result := NextArg(stack);
+	result := result - NextArg(stack);
 end;
 
 { Handler for * }
-function OpMultiplication(const a, b: TNumber): TNumber;
+function OpMultiplication(const stack: TPNStack): TNumber;
 begin
-	result := a * b;
+	result := NextArg(stack);
+	result := result * NextArg(stack);
 end;
 
 { Handler for / }
-function OpDivision(const a, b: TNumber): TNumber;
+function OpDivision(const stack: TPNStack): TNumber;
 begin
-	result := a / b;
+	result := NextArg(stack);
+	result := result / NextArg(stack);
 end;
 
 { Handler for ^ }
-function OpPower(const a, b: TNumber): TNumber;
+function OpPower(const stack: TPNStack): TNumber;
 begin
-	result := a ** b;
+	result := NextArg(stack);
+	result := result ** NextArg(stack);
 end;
 
 { Handler for % }
-function OpModulo(const a, b: TNumber): TNumber;
+function OpModulo(const stack: TPNStack): TNumber;
 begin
-	result := FMod(a, b);
+	result := NextArg(stack);
+	result := FMod(result, NextArg(stack));
 end;
 
 { Creates a new TOperationInfo }
