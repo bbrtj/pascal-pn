@@ -32,6 +32,10 @@ subtest 'invalid strings' => sub {
 	for my $case (
 		'0,0',
 		'notavar',
+		'5.315notanumber',
+		'5.315 notanumber',
+		'notanumber 5.315',
+		'5.315 + 11',
 		'+#5#5',
 		'5##5',
 	) {

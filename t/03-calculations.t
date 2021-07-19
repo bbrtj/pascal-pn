@@ -23,5 +23,15 @@ subtest 'regular calculations' => sub {
 	}
 };
 
+subtest 'tricky calculations' => sub {
+	for my $case (
+		['o+#0.3#o+#0.3#o+#0.3#o+#0.3#o+#0.3#o+#0.3#o+#0.3#o+#0.3#0.3', qr/(2\.69+.|2\.7)$/], # many operations
+		['o+#0.000005#0.000007', qr/0\.000012$/], # small numbers
+		['o+#200000000000#1', qr/200000000001$/], # large numbers
+	) {
+		my $result = run_good('-i', $case->[0]);
+		like $result, qr/^$case->[1]/, "calculation $case->[0] result ok";
+	}
+};
 
 done_testing;
