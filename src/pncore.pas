@@ -9,17 +9,20 @@ unit PNCore;
 interface
 
 uses
-	fgl, Math, SysUtils,
+	Math, SysUtils,
 	PNStack, PNTypes;
 
 type
 	TOperationHandler = function (const stack: TPNStack): TNumber;
+	TOperationType = (otInfix);
 	TOperationInfo = packed record
+		&operator: TOperator;
 		handler: TOperationHandler;
 		priority: Byte;
+		operationType: TOperationType;
 	end;
 
-	TOperationsMap = specialize TFPGMap<TOperator, TOperationInfo>;
+	TOperationsMap = Array of TOperationInfo;
 
 function GetOperationsMap(): TOperationsMap;
 
@@ -85,22 +88,24 @@ begin
 end;
 
 { Creates a new TOperationInfo }
-function MakeInfo(const handler: TOperationHandler; const priority: Byte): TOperationInfo;
+function MakeInfo(const &operator: TOperator; const handler: TOperationHandler; const priority: Byte): TOperationInfo;
 begin
+	result.&operator := &operator;
 	result.handler := handler;
 	result.priority := priority;
+	result.operationType := otInfix;
 end;
 
 function GetOperationsMap(): TOperationsMap;
 begin
-	result := TOperationsMap.Create;
-
-	result.Add('+', MakeInfo(@OpAddition, 1));
-	result.Add('-', MakeInfo(@OpSubstraction, 1));
-	result.Add('*', MakeInfo(@OpMultiplication, 2));
-	result.Add('/', MakeInfo(@OpDivision, 2));
-	result.Add('%', MakeInfo(@OpModulo, 2));
-	result.Add('^', MakeInfo(@OpPower, 3));
+	result := TOperationsMap.Create(
+		MakeInfo('+', @OpAddition, 1),
+		MakeInfo('-', @OpSubstraction, 1),
+		MakeInfo('*', @OpMultiplication, 2),
+		MakeInfo('/', @OpDivision, 2),
+		MakeInfo('%', @OpModulo, 2),
+		MakeInfo('^', @OpPower, 3)
+	);
 end;
 
 end.

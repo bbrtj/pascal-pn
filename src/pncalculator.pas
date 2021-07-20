@@ -27,12 +27,12 @@ var
 	info: TOperationInfo;
 
 begin
-	found := operationsMap.TryGetData(item.&operator, info);
+	for info in operationsMap do begin
+		if info.&operator = item.&operator then
+			Exit(info.handler);
+	end;
 
-	if not found then
-		raise Exception.Create('Invalid operator ' + item.&operator);
-
-	result := info.handler;
+	raise Exception.Create('Invalid operator ' + item.&operator);
 end;
 
 { Performs an operation on a stack }

@@ -55,8 +55,6 @@ end;
 {}
 destructor TPN.Destroy;
 begin
-	FreeAndNil(operationsMap);
-
 	SetStack(nil);
 	inherited;
 end;
