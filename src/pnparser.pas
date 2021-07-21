@@ -27,7 +27,7 @@ type
 			property Value: String read _value write SetValue;
 	end;
 
-	TTokenList = specialize TFPGList<TToken>;
+	TTokenList = specialize TFPGObjectList<TToken>;
 
 constructor TToken.Create(const value: String);
 begin
@@ -48,7 +48,6 @@ type
 
 		public
 			constructor Create(const &operator: TOperationInfo);
-			destructor Destroy; override;
 			property &Operator: POperationInfo read _operator write _operator;
 	end;
 
@@ -56,11 +55,6 @@ constructor TOperatorToken.Create(const &operator: TOperationInfo);
 begin
 	self.&Operator := @&operator;
 	inherited Create(self.&Operator^.&operator);
-end;
-
-destructor TOperatorToken.Destroy;
-begin
-	FreeAndNil(_operator);
 end;
 
 { TSyntaxToken class definition }
@@ -109,7 +103,6 @@ var
 	var
 		token: TToken;
 	begin
-		list[atIndex].Free;
 		list.Delete(atIndex);
 
 		for token in toAdd do begin
@@ -117,6 +110,7 @@ var
 			Inc(atIndex);
 		end;
 
+		toAdd.Free();
 		result := atIndex;
 	end;
 
@@ -127,7 +121,7 @@ var
 		index: Integer;
 
 	begin
-		sublist := TTokenList.Create;
+		sublist := TTokenList.Create(False);
 
 		for index := Low(splitData) to High(splitData) - 1 do begin
 			sublist.Add(TToken.Create(splitData[index]));
@@ -146,7 +140,7 @@ var
 		op: TOperationInfo;
 
 	begin
-		sublist := TTokenList.Create;
+		sublist := TTokenList.Create(False);
 
 		sublist.Add(TSyntaxToken.Create(sttGroupStart));
 		sublist.Add(TSyntaxToken.Create(sttGroupEnd));
@@ -165,7 +159,7 @@ var
 	currentOperator: TToken;
 
 begin
-	list := TTokenList.Create;
+	list := TTokenList.Create(True);
 	list.Add(TToken.Create(AnsiReplaceStr(context, ' ', '')));
 	operatorsList := GetOperatorTokenList();
 
@@ -185,14 +179,107 @@ begin
 		end;
 	end;
 
-	FreeAndNil(operatorsList);
+	operatorsList.Free();
 	result := list;
+end;
+
+{ Transforms prepared TTokenList into Polish notation }
+function TransformTokenList(const tokens: TTokenList): TTokenList;
+
+	{ Recursively transform standard notation }
+	function TransformRecursive(): TTokenList;
+	var
+		lastOperation: POperationInfo;
+		sublist: TTokenList;
+
+		currentToken: TToken;
+		currentIndex: Integer;
+
+	begin
+		result := TTokenList.Create(False);
+
+		while tokens.First <> nil do begin
+			currentToken := tokens.First;
+
+			if currentToken is TOperatorToken then begin
+				currentIndex := result.Count - 1;
+
+				if (lastOperation <> nil)
+					and (lastOperation^.priority > (currentToken as TOperatorToken).&Operator^.priority)
+				then begin
+					for currentIndex := currentIndex downto 0 do begin
+						if (result[currentIndex] is TOperatorToken)
+							and ((currentToken as TOperatorToken).&Operator^.priority
+								>= (result[currentIndex] as TOperatorToken).&Operator^.priority)
+						then
+							break;
+					end;
+				end;
+
+				result.Insert(currentIndex, tokens.Extract(currentToken));
+				lastOperation := (currentToken as TOperatorToken).&Operator;
+			end
+
+			else if currentToken is TSyntaxToken then begin
+
+				case (currentToken as TSyntaxToken).Syntax of
+					sttGroupStart: begin
+						sublist := TransformRecursive();
+						result.AddList(sublist);
+						sublist.Free();
+					end;
+					sttGroupEnd: break;
+				end;
+			end
+
+			else begin
+				if Length(currentToken.Value) = 0 then
+					tokens.Remove(currentToken)
+				else
+					result.Add(tokens.Extract(currentToken));
+			end;
+		end;
+	end;
+
+begin
+	result := TransformRecursive();
+	result.FreeObjects := True;
+
+	if tokens.Count > 0 then
+		raise Exception.Create('Invalid notation passed');
+
+	tokens.Free();
+end;
+
+{ Transforms a TToken (from TTokenList) into TItem (to be pushed onto TPNStack) }
+function GetItemFromToken(const token: TToken): TItem;
+var
+	value: TNumber;
+begin
+	if token.ClassType = TOperatorToken then
+		result := MakeItem(TOperator(token.Value))
+	else if TryStrToFloat(token.Value, value) then
+		result := MakeItem(value)
+	else
+		result := MakeItem(TVariable(token.Value));
+	// TODO: Check if variable contains only a-z
 end;
 
 { Parses the entire calculation }
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
+var
+	tokens: TTokenList;
+	token: TToken;
 begin
+	tokens := Tokenize(input, operators);
+	tokens := TransformTokenList(tokens);
+
 	result := TPNStack.Create;
+	for token in tokens do begin
+		result.Push(GetItemFromToken(token));
+	end;
+
+	tokens.Free();
 end;
 
 end.
