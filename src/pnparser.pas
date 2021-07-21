@@ -53,8 +53,8 @@ type
 
 constructor TOperatorToken.Create(const &operator: TOperationInfo);
 begin
+	inherited Create(&operator.&operator);
 	self.&Operator := @&operator;
-	inherited Create(self.&Operator^.&operator);
 end;
 
 { TSyntaxToken class definition }
@@ -185,20 +185,26 @@ end;
 
 { Transforms prepared TTokenList into Polish notation }
 function TransformTokenList(const tokens: TTokenList): TTokenList;
+	type
+		TContext = specialize TFPGObjectList<TTokenList>;
 
 	{ Recursively transform standard notation }
 	function TransformRecursive(): TTokenList;
 	var
 		lastOperation: POperationInfo;
 		sublist: TTokenList;
+		nested: TContext;
 
 		currentToken: TToken;
 		currentIndex: Integer;
+		moveCounter: Integer;
 
 	begin
 		result := TTokenList.Create(False);
+		nested := TContext.Create(True);
+		lastOperation := nil;
 
-		while tokens.First <> nil do begin
+		while tokens.Count > 0 do begin
 			currentToken := tokens.First;
 
 			if currentToken is TOperatorToken then begin
@@ -216,20 +222,26 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 					end;
 				end;
 
-				result.Insert(currentIndex, tokens.Extract(currentToken));
 				lastOperation := (currentToken as TOperatorToken).&Operator;
+				result.Insert(currentIndex, tokens.Extract(currentToken));
 			end
 
 			else if currentToken is TSyntaxToken then begin
-
 				case (currentToken as TSyntaxToken).Syntax of
+
 					sttGroupStart: begin
+						result.Add(tokens.Extract(currentToken));
 						sublist := TransformRecursive();
-						result.AddList(sublist);
-						sublist.Free();
+
+						nested.Add(sublist);
 					end;
-					sttGroupEnd: break;
+
+					sttGroupEnd: begin
+						tokens.Extract(currentToken);
+						break;
+					end;
 				end;
+
 			end
 
 			else begin
@@ -239,6 +251,29 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 					result.Add(tokens.Extract(currentToken));
 			end;
 		end;
+
+		currentIndex := 0;
+		while currentIndex < result.Count do begin
+			currentToken := result[currentIndex];
+
+			// any TSyntaxTokens left have to be replaced with associated TTokenLists
+			// (late insertion of nested contexts)
+			if currentToken is TSyntaxToken then begin
+				result.Remove(currentToken);
+				sublist := nested.Extract(nested[0]);
+				result.AddList(sublist);
+
+				moveCounter := currentIndex;
+				while currentIndex < moveCounter + sublist.Count do begin
+					result.Move(result.Count - sublist.Count + (currentIndex - moveCounter), currentIndex);
+					Inc(currentIndex);
+				end;
+			end
+			else
+				Inc(currentIndex);
+		end;
+
+		nested.Free();
 	end;
 
 begin

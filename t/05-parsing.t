@@ -24,6 +24,8 @@ subtest 'single context' => sub {
 subtest 'nested contexts' => sub {
 	for my $case (
 		['(2 + 3) * 4', 'o*#o+#2#3#4'],
+		['((1 + 2) * 3) ^ 4', 'o^#o*#o+#1#2#3#4'],
+		['1 + (2 * (3 ^ 4))', 'o+#1#o*#2#o^#3#4'],
 	) {
 		my $result = run_good('-p', $case->[0], '-e');
 		is $result, $case->[1], "parsing $case->[0] result ok";
