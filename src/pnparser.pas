@@ -41,20 +41,19 @@ end;
 
 { TOperatorToken class definition }
 type
-	POperationInfo = ^TOperationInfo;
 	TOperatorToken = class(TToken)
 		private
-			_operator: POperationInfo;
+			_operator: TOperationInfo;
 
 		public
 			constructor Create(const &operator: TOperationInfo);
-			property &Operator: POperationInfo read _operator write _operator;
+			property &Operator: TOperationInfo read _operator write _operator;
 	end;
 
 constructor TOperatorToken.Create(const &operator: TOperationInfo);
 begin
 	inherited Create(&operator.&operator);
-	self.&Operator := @&operator;
+	self.&Operator := &operator;
 end;
 
 { TSyntaxToken class definition }
@@ -133,37 +132,13 @@ var
 		result := sublist;
 	end;
 
-	{ Get token list for operators, which can be used to split other tokens }
-	function GetOperatorTokenList(): TTokenList;
+	{ Do the splitting }
+	procedure SplitTokens(const currentOperator: TToken);
 	var
-		sublist: TTokenList;
-		op: TOperationInfo;
+		current: TToken;
+		currentIndex: Integer;
 
 	begin
-		sublist := TTokenList.Create(False);
-
-		sublist.Add(TSyntaxToken.Create(sttGroupStart));
-		sublist.Add(TSyntaxToken.Create(sttGroupEnd));
-
-		for op in operators do
-			sublist.Add(TOperatorToken.Create(op));
-
-		result := sublist;
-	end;
-
-var
-	current: TToken;
-	currentIndex: Integer;
-
-	operatorsList: TTokenList;
-	currentOperator: TToken;
-
-begin
-	list := TTokenList.Create(True);
-	list.Add(TToken.Create(AnsiReplaceStr(context, ' ', '')));
-	operatorsList := GetOperatorTokenList();
-
-	for currentOperator in operatorsList do begin
 		currentIndex := 0;
 
 		while currentIndex < list.Count do begin
@@ -179,7 +154,23 @@ begin
 		end;
 	end;
 
-	operatorsList.Free();
+var
+	op: TOperationInfo;
+	stt: TSyntaxTokenType;
+	part: String;
+
+begin
+	list := TTokenList.Create(True);
+
+	for part in context.split(' ') do
+		list.Add(TToken.Create(part));
+
+	for stt in TSyntaxTokenType do
+		SplitTokens(TSyntaxToken.Create(stt));
+
+	for op in operators do
+		SplitTokens(TOperatorToken.Create(op));
+
 	result := list;
 end;
 
@@ -189,9 +180,9 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 		TContext = specialize TFPGObjectList<TTokenList>;
 
 	{ Recursively transform standard notation }
-	function TransformRecursive(): TTokenList;
+	function TransformRecursive(tillBrace: Boolean = False): TTokenList;
 	var
-		lastOperation: POperationInfo;
+		lastOperation: ^TOperationInfo;
 		sublist: TTokenList;
 		nested: TContext;
 
@@ -211,18 +202,21 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 				currentIndex := result.Count - 1;
 
 				if (lastOperation <> nil)
-					and (lastOperation^.priority > (currentToken as TOperatorToken).&Operator^.priority)
+					and (lastOperation^.priority > (currentToken as TOperatorToken).&Operator.priority)
 				then begin
 					for currentIndex := currentIndex downto 0 do begin
 						if (result[currentIndex] is TOperatorToken)
-							and ((currentToken as TOperatorToken).&Operator^.priority
-								>= (result[currentIndex] as TOperatorToken).&Operator^.priority)
+							and ((currentToken as TOperatorToken).&Operator.priority
+								>= (result[currentIndex] as TOperatorToken).&Operator.priority)
 						then
 							break;
 					end;
 				end;
 
-				lastOperation := (currentToken as TOperatorToken).&Operator;
+				if currentIndex < 0 then
+					currentIndex := 0;
+
+				lastOperation := Addr((currentToken as TOperatorToken).&Operator);
 				result.Insert(currentIndex, tokens.Extract(currentToken));
 			end
 
@@ -231,13 +225,14 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 
 					sttGroupStart: begin
 						result.Add(tokens.Extract(currentToken));
-						sublist := TransformRecursive();
+						sublist := TransformRecursive(True);
 
 						nested.Add(sublist);
 					end;
 
 					sttGroupEnd: begin
 						tokens.Extract(currentToken);
+						tillBrace := not tillBrace;
 						break;
 					end;
 				end;
@@ -251,6 +246,9 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 					result.Add(tokens.Extract(currentToken));
 			end;
 		end;
+
+		if tillBrace then
+			raise Exception.Create('Unmatched braces');
 
 		currentIndex := 0;
 		while currentIndex < result.Count do begin
@@ -278,10 +276,6 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 
 begin
 	result := TransformRecursive();
-	result.FreeObjects := True;
-
-	if tokens.Count > 0 then
-		raise Exception.Create('Invalid notation passed');
 
 	tokens.Free();
 end;
@@ -291,13 +285,14 @@ function GetItemFromToken(const token: TToken): TItem;
 var
 	value: TNumber;
 begin
-	if token.ClassType = TOperatorToken then
+	if token is TOperatorToken then
 		result := MakeItem(TOperator(token.Value))
 	else if TryStrToFloat(token.Value, value) then
 		result := MakeItem(value)
+	else if IsValidIdent(token.Value) then
+		result := MakeItem(TVariable(token.Value))
 	else
-		result := MakeItem(TVariable(token.Value));
-	// TODO: Check if variable contains only a-z
+		raise Exception.Create('Invalid token ' + token.Value);
 end;
 
 { Parses the entire calculation }
@@ -312,6 +307,13 @@ begin
 	result := TPNStack.Create;
 	for token in tokens do begin
 		result.Push(GetItemFromToken(token));
+	end;
+
+	// Free all tokens, which may have multiple pointers to the same memory
+	while tokens.Count > 0 do begin
+		token := tokens.First;
+		while tokens.Remove(token) <> -1 do;
+		token.Free();
 	end;
 
 	tokens.Free();
