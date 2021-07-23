@@ -87,7 +87,7 @@ var
 	part: String;
 
 begin
-	list := TTokenList.Create(True);
+	list := TTokenList.Create(False);
 
 	for part in context.split(' ') do
 		list.Add(TToken.Create(part));
@@ -121,7 +121,7 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 	end;
 
 	{ Recursively transform standard notation into a tree }
-	function MakeTree(inBraces: Boolean = False): TPNNode;
+	function MakeTree(var index: Integer; inBraces: Boolean = False): TPNNode;
 	var
 		lastOperation: TPNNode;
 		currentRoot: TPNNode;
@@ -134,11 +134,11 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 		lastOperation := nil;
 		currentRoot := nil;
 
-		while tokens.Count > 0 do begin
-			currentToken := tokens.First;
-			node := TPNNode.Create(tokens.Extract(currentToken));
+		while index < tokens.Count do begin
+			currentToken := tokens[index];
 
 			if currentToken is TOperatorToken then begin
+				node := TPNNode.Create(currentToken);
 
 				while (lastOperation <> nil) and (lastOperation.OperationPriority() >= node.OperationPriority()) do
 					lastOperation := lastOperation.parent;
@@ -158,11 +158,11 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 			end
 
 			else if currentToken is TSyntaxToken then begin
-				node.Free();
+				index += 1;
 
 				case (currentToken as TSyntaxToken).Syntax of
 					sttGroupStart: begin
-						node := MakeTree(True);
+						node := MakeTree(index, True);
 						AddNode(node, lastOperation, @currentRoot);
 					end;
 
@@ -175,14 +175,13 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 			end
 
 			else begin
-				if Length(currentToken.Value) = 0 then begin
-					node.Free();
-					tokens.Remove(currentToken);
-				end
-				else begin
+				if Length(currentToken.Value) > 0 then begin
+					node := TPNNode.Create(currentToken);
 					AddNode(node, lastOperation, @currentRoot);
 				end;
 			end;
+
+			index += 1;
 		end;
 
 		if inBraces then
@@ -192,31 +191,35 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 	end;
 
 var
-	resultTree:  TPNNode;
+	resultTree: TPNNode;
+	treeNode: TPNNode;
+	index: Integer;
 
 begin
-	resultTree := MakeTree();
+	resultTree := MakeTree(index);
 	result := TTokenList.Create(False);
 
-	while resultTree <> nil do begin
-		result.Add(resultTree.token);
-		resultTree := resultTree.NextInorder();
+	treeNode := resultTree;
+	while treeNode <> nil do begin
+		result.Add(treeNode.token);
+		treeNode := treeNode.NextInorder();
 	end;
 
-	tokens.Free();
+	resultTree.Free();
 end;
 
 { Parses the entire calculation }
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
 var
 	tokens: TTokenList;
+	sortedTokens: TTokenList;
 	token: TToken;
 begin
 	tokens := Tokenize(input, operators);
-	tokens := TransformTokenList(tokens);
+	sortedTokens := TransformTokenList(tokens);
 
 	result := TPNStack.Create;
-	for token in tokens do begin
+	for token in sortedTokens do begin
 		result.Push(GetItemFromToken(token));
 	end;
 
@@ -226,8 +229,6 @@ begin
 		while tokens.Remove(token) <> -1 do;
 		token.Free();
 	end;
-
-	tokens.Free();
 end;
 
 end.
