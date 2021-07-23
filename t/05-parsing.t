@@ -17,7 +17,7 @@ subtest 'single context' => sub {
 		['2 + 3 * var', 'o+#2#o*#3#vvar'],
 		['a + b * c', 'o+#va#o*#vb#vc'],
 		['2 - 3 - 4', 'o-#o-#2#3#4'],
-		['2 + 3 ^ 4 * 5 - 6', 'o+#o-#2#o*#o^#3#4#5#6'],
+		['2 + 3 ^ 4 * 5 - 6', 'o-#o+#2#o*#o^#3#4#5#6'],
 	) {
 		my $result = run_good('-p', $case->[0], '-e');
 		is $result, $case->[1], "parsing $case->[0] result ok";
@@ -45,6 +45,8 @@ subtest 'invalid examples' => sub {
 		'21 + aaaa[', # only partially valid variable name
 		'this - is * (test', # unmatched braces
 		'this - is * )test', # unmatched braces
+		'2 2+2', # unexpected 2
+		'2+2 2', # unexpected 2
 	) {
 		run_bad('-p', $case, '-e');
 	}

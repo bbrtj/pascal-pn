@@ -10,87 +10,14 @@ interface
 
 uses
 	Fgl, SysUtils, StrUtils,
-	PNCore, PNStack, PNTypes;
+	PNTree, PNToken, PNCore, PNStack, PNTypes;
 
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
 
 implementation
 
-{ TToken class definition }
 type
-	TToken = class
-		private
-			_value: String;
-			procedure SetValue(const value: String);
-		public
-			constructor Create(const value: String);
-			property Value: String read _value write SetValue;
-	end;
-
 	TTokenList = specialize TFPGObjectList<TToken>;
-
-constructor TToken.Create(const value: String);
-begin
-	SetValue(value);
-end;
-
-procedure TToken.SetValue(const value: String);
-begin
-	_value := value;
-end;
-
-{ TOperatorToken class definition }
-type
-	TOperatorToken = class(TToken)
-		private
-			_operator: TOperationInfo;
-
-		public
-			constructor Create(const &operator: TOperationInfo);
-			property &Operator: TOperationInfo read _operator write _operator;
-	end;
-
-constructor TOperatorToken.Create(const &operator: TOperationInfo);
-begin
-	inherited Create(&operator.&operator);
-	self.&Operator := &operator;
-end;
-
-{ TSyntaxToken class definition }
-type
-	TSyntaxTokenType = (sttGroupStart, sttGroupEnd);
-
-	TSyntaxToken = class(TToken)
-		private
-			const
-				bracketOpen = '(';
-				bracketClose = ')';
-
-			var
-				_syntax: TSyntaxTokenType;
-
-			procedure SetSyntax(const syntax: TSyntaxTokenType);
-		public
-			constructor Create(const syntax: TSyntaxTokenType);
-			property Syntax: TSyntaxTokenType read _syntax write SetSyntax;
-	end;
-
-constructor TSyntaxToken.Create(const syntax: TSyntaxTokenType);
-begin
-	self.Syntax := syntax;
-end;
-
-procedure TSyntaxToken.SetSyntax(const syntax: TSyntaxTokenType);
-begin
-	_syntax := syntax;
-
-	if syntax = sttGroupStart then
-		Value := bracketOpen
-	else if syntax = sttGroupEnd then
-		Value := bracketClose
-	else
-		raise Exception.Create('Invalid token type');
-end;
 
 { Tokenize a string. Tokens still don't know what their meaning of life is }
 function Tokenize(const context: String; const operators: TOperationsMap): TTokenList;
@@ -176,63 +103,71 @@ end;
 
 { Transforms prepared TTokenList into Polish notation }
 function TransformTokenList(const tokens: TTokenList): TTokenList;
-	type
-		TContext = specialize TFPGObjectList<TTokenList>;
 
-	{ Recursively transform standard notation }
-	function TransformRecursive(tillBrace: Boolean = False): TTokenList;
+	procedure AddNode(const node, lastOperation: TPNNode; const root: PPNNode);
+	begin
+		if lastOperation <> nil then begin
+			if (lastOperation.OperationType() = otInfix) and (lastOperation.right = nil) then
+				lastOperation.right := node
+			else
+				raise Exception.Create(
+					Format('Unexpected %S (operator %S)', [node.token.Value, lastOperation.token.Value])
+				);
+		end
+		else if root^ = nil then
+			root^ := node
+		else
+			raise Exception.Create(Format('Unexpected %S', [node.token.Value]));
+	end;
+
+	{ Recursively transform standard notation into a tree }
+	function MakeTree(inBraces: Boolean = False): TPNNode;
 	var
-		lastOperation: ^TOperationInfo;
-		sublist: TTokenList;
-		nested: TContext;
+		lastOperation: TPNNode;
+		currentRoot: TPNNode;
+		node: TPNNode;
+		tmp: TPNNode;
 
 		currentToken: TToken;
-		currentIndex: Integer;
-		moveCounter: Integer;
 
 	begin
-		result := TTokenList.Create(False);
-		nested := TContext.Create(True);
 		lastOperation := nil;
+		currentRoot := nil;
 
 		while tokens.Count > 0 do begin
 			currentToken := tokens.First;
+			node := TPNNode.Create(tokens.Extract(currentToken));
 
 			if currentToken is TOperatorToken then begin
-				currentIndex := result.Count - 1;
 
-				if (lastOperation <> nil)
-					and (lastOperation^.priority > (currentToken as TOperatorToken).&Operator.priority)
-				then begin
-					for currentIndex := currentIndex downto 0 do begin
-						if (result[currentIndex] is TOperatorToken)
-							and ((currentToken as TOperatorToken).&Operator.priority
-								>= (result[currentIndex] as TOperatorToken).&Operator.priority)
-						then
-							break;
-					end;
+				while (lastOperation <> nil) and (lastOperation.OperationPriority() >= node.OperationPriority()) do
+					lastOperation := lastOperation.parent;
+
+				if lastOperation = nil then begin
+					node.left := currentRoot;
+					currentRoot := node;
+				end
+
+				else begin
+					tmp := lastOperation.right;
+					lastOperation.right := node;
+					node.left := tmp;
 				end;
 
-				if currentIndex < 0 then
-					currentIndex := 0;
-
-				lastOperation := Addr((currentToken as TOperatorToken).&Operator);
-				result.Insert(currentIndex, tokens.Extract(currentToken));
+				lastOperation := node;
 			end
 
 			else if currentToken is TSyntaxToken then begin
+				node.Free();
+
 				case (currentToken as TSyntaxToken).Syntax of
-
 					sttGroupStart: begin
-						result.Add(tokens.Extract(currentToken));
-						sublist := TransformRecursive(True);
-
-						nested.Add(sublist);
+						node := MakeTree(True);
+						AddNode(node, lastOperation, @currentRoot);
 					end;
 
 					sttGroupEnd: begin
-						tokens.Extract(currentToken);
-						tillBrace := not tillBrace;
+						inBraces := not inBraces;
 						break;
 					end;
 				end;
@@ -240,59 +175,35 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 			end
 
 			else begin
-				if Length(currentToken.Value) = 0 then
-					tokens.Remove(currentToken)
-				else
-					result.Add(tokens.Extract(currentToken));
+				if Length(currentToken.Value) = 0 then begin
+					node.Free();
+					tokens.Remove(currentToken);
+				end
+				else begin
+					AddNode(node, lastOperation, @currentRoot);
+				end;
 			end;
 		end;
 
-		if tillBrace then
+		if inBraces then
 			raise Exception.Create('Unmatched braces');
 
-		currentIndex := 0;
-		while currentIndex < result.Count do begin
-			currentToken := result[currentIndex];
-
-			// any TSyntaxTokens left have to be replaced with associated TTokenLists
-			// (late insertion of nested contexts)
-			if currentToken is TSyntaxToken then begin
-				result.Remove(currentToken);
-				sublist := nested.Extract(nested[0]);
-				result.AddList(sublist);
-
-				moveCounter := currentIndex;
-				while currentIndex < moveCounter + sublist.Count do begin
-					result.Move(result.Count - sublist.Count + (currentIndex - moveCounter), currentIndex);
-					Inc(currentIndex);
-				end;
-			end
-			else
-				Inc(currentIndex);
-		end;
-
-		nested.Free();
+		result := currentRoot;
 	end;
 
+var
+	resultTree:  TPNNode;
+
 begin
-	result := TransformRecursive();
+	resultTree := MakeTree();
+	result := TTokenList.Create(False);
+
+	while resultTree <> nil do begin
+		result.Add(resultTree.token);
+		resultTree := resultTree.NextInorder();
+	end;
 
 	tokens.Free();
-end;
-
-{ Transforms a TToken (from TTokenList) into TItem (to be pushed onto TPNStack) }
-function GetItemFromToken(const token: TToken): TItem;
-var
-	value: TNumber;
-begin
-	if token is TOperatorToken then
-		result := MakeItem(TOperator(token.Value))
-	else if TryStrToFloat(token.Value, value) then
-		result := MakeItem(value)
-	else if IsValidIdent(token.Value) then
-		result := MakeItem(TVariable(token.Value))
-	else
-		raise Exception.Create('Invalid token ' + token.Value);
 end;
 
 { Parses the entire calculation }
