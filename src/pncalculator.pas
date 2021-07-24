@@ -23,7 +23,6 @@ implementation
 { Gets an operation handler from the operator found on the stack }
 function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler;
 var
-	found: Boolean;
 	info: TOperationInfo;
 
 begin
