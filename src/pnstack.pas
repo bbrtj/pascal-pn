@@ -9,28 +9,18 @@ unit PNStack;
 interface
 
 uses
-	StrUtils, SysUtils,
+	StrUtils, SysUtils, Contnrs,
 	PNTypes;
 
 type
 
-	PStackItem = ^TStackItem;
-	TStackItem = packed record
-		value: TItem;
-		next: PStackItem;
-	end;
-
-	TPNStack = class
-		protected
-			stackHead: PStackItem;
-
+	TPNStack = class(TStack)
 		public
 			const
 				separatorChar = '#';
 				operatorPrefixChar = 'o';
 				variablePrefixChar = 'v';
 
-			constructor Create;
 			destructor Destroy; override;
 
 			procedure Push(const item: TItem);
@@ -47,13 +37,6 @@ type
 implementation
 
 {}
-constructor TPNStack.Create;
-begin
-	inherited;
-	stackHead := nil;
-end;
-
-{}
 destructor TPNStack.Destroy;
 begin
 	Clear();
@@ -63,52 +46,42 @@ end;
 { Pushes on top of the stack }
 procedure TPNStack.Push(const item: TItem);
 var
-	stackItem: TStackItem;
-
+	res: ^TItem;
 begin
-	stackItem.value := item;
-	stackItem.next := stackHead;
-
-	New(stackHead);
-	stackHead^ := stackItem;
+	New(res);
+	res^ := item;
+	inherited Push(res);
 end;
 
 { Pops the top of the stack }
 function TPNStack.Pop(): TItem;
 var
-	stackItem: TStackItem;
-
+	res: ^TItem;
 begin
-	stackItem := stackHead^;
-	Dispose(stackHead);
-
-	stackHead := stackItem.next;
-	result := stackItem.value;
+	res := inherited Pop();
+	result := TItem(res^);
+	Dispose(res);
 end;
 
 { Returns the top of the stack without poping it }
 function TPNStack.Top(): TItem;
+var
+	res: ^TItem;
 begin
-	result := stackHead^.value;
+	res := Peek();
+	result := TItem(res^);
 end;
 
 { Checks whether the stack is empty }
 function TPNStack.Empty(): Boolean;
 begin
-	result := stackHead = nil;
+	result := not AtLeast(1);
 end;
 
-{ Clears the stack }
 procedure TPNStack.Clear();
-var
-	nextStackHead: PStackItem;
-
 begin
-	while stackHead <> nil do begin
-		nextStackHead := stackHead^.next;
-		Dispose(stackHead);
-		stackHead := nextStackHead;
-	end;
+	while not Empty() do
+		Pop();
 end;
 
 { Exports to string, destroys the stack in the process }
