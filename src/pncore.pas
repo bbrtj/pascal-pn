@@ -15,7 +15,7 @@ uses
 type
 	TOperationHandler = function (const stack: TPNStack): TNumber;
 	TOperationType = (otInfix);
-	TOperationInfo = packed record
+	TOperationInfo = record
 		&operator: TOperator;
 		handler: TOperationHandler;
 		priority: Byte;
@@ -25,7 +25,7 @@ type
 	TOperationsMap = Array of TOperationInfo;
 
 	TSyntaxType = (stGroupStart, stGroupEnd);
-	TSyntaxInfo = packed record
+	TSyntaxInfo = record
 		symbol: String;
 		value: TSyntaxType;
 	end;

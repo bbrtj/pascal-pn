@@ -23,6 +23,14 @@ This notation is stored as a simple stack can be exported to a string. The progr
 - Evaluation based on 64 bit (double) floating point numbers
 - Compiled into a CLI program or into a shared library (work in progress)
 
+## Supported operators
+
+### Binary
+
+```
++ - * / ^ %
+```
+
 ## TODO
 
 There are some things that could use improvements:

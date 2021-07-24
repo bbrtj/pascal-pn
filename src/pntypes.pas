@@ -13,7 +13,7 @@ type
 	TVariable = String[10];
 	TOperator = String[3];
 
-	TVariableAssignment = packed record
+	TVariableAssignment = record
 		variable: TVariable;
 		number: TNumber;
 	end;
@@ -21,7 +21,7 @@ type
 	TVariableMap = Array of TVariableAssignment;
 
 	TItemType = (itNumber, itVariable, itOperator);
-	TItem = packed record
+	TItem = record
 		case itemType: TItemType of
 			itNumber: (number: TNumber);
 			itVariable: (variable: TVariable);
