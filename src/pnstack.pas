@@ -79,9 +79,6 @@ var
 	stackItem: TStackItem;
 
 begin
-	if Empty() then
-		raise Exception.Create('Stack is empty');
-
 	stackItem := stackHead^;
 	Dispose(stackHead);
 
@@ -92,9 +89,6 @@ end;
 { Returns the top of the stack without poping it }
 function TPNStack.Top(): TItem;
 begin
-	if Empty() then
-		raise Exception.Create('Stack is empty');
-
 	result := stackHead^.value;
 end;
 

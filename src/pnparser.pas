@@ -24,25 +24,25 @@ type
 		&operator: TOperationInfo;
 	end;
 
-	function MakeElementInfo(const info: TSyntaxInfo): TElementInfo;
-	begin
-		result.elementType := etSyntax;
-		result.syntax := info;
-	end;
+function MakeElementInfo(const info: TSyntaxInfo): TElementInfo;
+begin
+	result.elementType := etSyntax;
+	result.syntax := info;
+end;
 
-	function MakeElementInfo(const info: TOperationInfo): TElementInfo;
-	begin
-		result.elementType := etOperator;
-		result.&operator := info;
-	end;
+function MakeElementInfo(const info: TOperationInfo): TElementInfo;
+begin
+	result.elementType := etOperator;
+	result.&operator := info;
+end;
 
-	function MakeTokenFromElementInfo(const info: TElementInfo): TToken;
-	begin
-		case info.elementType of
-			etSyntax: result := TSyntaxToken.Create(info.syntax);
-			etOperator: result := TOperatorToken.Create(info.&operator);
-		end;
+function MakeTokenFromElementInfo(const info: TElementInfo): TToken;
+begin
+	case info.elementType of
+		etSyntax: result := TSyntaxToken.Create(info.syntax);
+		etOperator: result := TOperatorToken.Create(info.&operator);
 	end;
+end;
 
 type
 	TTokenList = specialize TFPGObjectList<TToken>;
@@ -77,6 +77,7 @@ var
 begin
 	list := TTokenList.Create(True);
 	lastChar := Length(context);
+	list.Capacity := lastChar;
 
 	// calculate and set the required length
 	index := Ord(High(TSyntaxType)) + 1 + Length(operators);
@@ -138,7 +139,7 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 	end;
 
 	{ Recursively transform standard notation into a tree }
-	function MakeTree(var index: Integer; inBraces: Boolean = False): TPNNode;
+	function MakeTree(var index: Word; inBraces: Boolean = False): TPNNode;
 	var
 		lastOperation: TPNNode;
 		currentRoot: TPNNode;
@@ -210,12 +211,13 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 var
 	resultTree: TPNNode;
 	treeNode: TPNNode;
-	index: Integer;
+	index: Word;
 
 begin
 	index := 0;
 	resultTree := MakeTree(index);
 	result := TTokenList.Create(False);
+	result.Capacity := tokens.Capacity;
 
 	treeNode := resultTree;
 	while treeNode <> nil do begin
