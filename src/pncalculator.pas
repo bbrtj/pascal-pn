@@ -44,16 +44,13 @@ end;
 { Tries to fetch a variable value from TVariableMap }
 function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem;
 var
-	varAssignment: TVariableAssignment;
+	varValue: TNumber;
 
 begin
-	for varAssignment in variables do begin
-		if item.variable = varAssignment.variable then begin
-			Exit(MakeItem(varAssignment.number));
-		end;
-	end;
+	if not variables.TryGetData(item.variable, varValue) then
+		raise Exception.Create('Variable ' + item.variable + ' was not defined');
 
-	raise Exception.Create('Variable ' + item.variable + ' was not defined');
+	result := MakeItem(varValue);
 end;
 
 { Calculates a result from a Polish notation stack }

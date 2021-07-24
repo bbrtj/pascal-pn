@@ -8,17 +8,15 @@ unit PNTypes;
 
 interface
 
+uses
+	Fgl;
+
 type
 	TNumber = Double;
 	TVariable = String[10];
 	TOperator = String[3];
 
-	TVariableAssignment = record
-		variable: TVariable;
-		number: TNumber;
-	end;
-
-	TVariableMap = Array of TVariableAssignment;
+	TVariableMap = specialize TFPGMap<TVariable, TNumber>;
 
 	TItemType = (itNumber, itVariable, itOperator);
 	TItem = record
@@ -28,19 +26,11 @@ type
 			itOperator: (&operator: TOperator);
 	end;
 
-function MakeVariableAssignment(const variable: TVariable; const number: TNumber): TVariableAssignment;
 function MakeItem(const value: TNumber): TItem;
 function MakeItem(const value: TVariable): TItem;
 function MakeItem(const value: TOperator): TItem;
 
 implementation
-
-{ Creates TVariableAssignment }
-function MakeVariableAssignment(const variable: TVariable; const number: TNumber): TVariableAssignment;
-begin
-	result.variable := variable;
-	result.number := number;
-end;
 
 { Creates TItem from TNumber }
 function MakeItem(const value: TNumber): TItem;

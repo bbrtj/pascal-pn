@@ -15,14 +15,9 @@ uses
 type
 
 	TPN = class
-		private
-			const variableMapSizeStep = 5;
-
 		protected
 			operationsMap: TOperationsMap;
-
 			variableMap: TVariableMap;
-			variableMapMax: Integer;
 
 			currentStack: TPNStack;
 			procedure SetStack(const stack: TPNStack);
@@ -49,13 +44,14 @@ constructor TPN.Create;
 begin
 	inherited;
 	operationsMap := GetOperationsMap();
-	variableMapMax := -1;
+	variableMap := TVariableMap.Create;
 end;
 
 {}
 destructor TPN.Destroy;
 begin
-	SetStack(nil);
+	currentStack.Free();
+	variableMap.Free();
 	inherited;
 end;
 
@@ -83,18 +79,13 @@ end;
 { Defines a new variable for the calculations }
 procedure TPN.DefineVariable(const variable: TVariable; const number: TNumber);
 begin
-	variableMapMax += 1;
-	if variableMapMax div variableMapSizeStep = 0 then
-		SetLength(variableMap, variableMapMax + variableMapSizeStep);
-
-	variableMap[variableMapMax] := MakeVariableAssignment(variable, number);
+	variableMap.Add(variable, number);
 end;
 
 { Removes all defined variables for the calculation }
 procedure TPN.ClearVariables();
 begin
-	variableMapMax := -1;
-	SetLength(variableMap, 0);
+	variableMap.Clear();
 end;
 
 { Parses a string via PNParser }
