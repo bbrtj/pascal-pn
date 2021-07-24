@@ -24,7 +24,16 @@ type
 
 	TOperationsMap = Array of TOperationInfo;
 
+	TSyntaxType = (stGroupStart, stGroupEnd);
+	TSyntaxInfo = packed record
+		symbol: String;
+		value: TSyntaxType;
+	end;
+
+	TSyntaxMap = Array of TSyntaxInfo;
+
 function GetOperationsMap(): TOperationsMap;
+function GetSyntaxMap(): TSyntaxMap;
 
 implementation
 
@@ -105,6 +114,20 @@ begin
 		MakeInfo('/', @OpDivision, 2),
 		MakeInfo('%', @OpModulo, 2),
 		MakeInfo('^', @OpPower, 3)
+	);
+end;
+
+function MakeSyntax(const symbol: String; const value: TSyntaxType): TSyntaxInfo;
+begin
+	result.symbol := symbol;
+	result.value := value;
+end;
+
+function GetSyntaxMap(): TSyntaxMap;
+begin
+	result := TSyntaxMap.Create(
+		MakeSyntax('(', stGroupStart),
+		MakeSyntax(')', stGroupEnd)
 	);
 end;
 

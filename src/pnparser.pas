@@ -17,6 +17,34 @@ function Parse(const input: String; const operators: TOperationsMap): TPNStack;
 implementation
 
 type
+	TElementType = (etSyntax, etOperator);
+	TElementInfo = record
+		elementType: TElementType;
+		syntax: TSyntaxInfo;
+		&operator: TOperationInfo;
+	end;
+
+	function MakeElementInfo(const info: TSyntaxInfo): TElementInfo;
+	begin
+		result.elementType := etSyntax;
+		result.syntax := info;
+	end;
+
+	function MakeElementInfo(const info: TOperationInfo): TElementInfo;
+	begin
+		result.elementType := etOperator;
+		result.&operator := info;
+	end;
+
+	function MakeTokenFromElementInfo(const info: TElementInfo): TToken;
+	begin
+		case info.elementType of
+			etSyntax: result := TSyntaxToken.Create(info.syntax);
+			etOperator: result := TOperatorToken.Create(info.&operator);
+		end;
+	end;
+
+type
 	TTokenList = specialize TFPGObjectList<TToken>;
 
 { Tokenize a string. Tokens still don't know what their meaning of life is }
@@ -36,10 +64,10 @@ var
 	list: TTokenList;
 
 	op: TOperationInfo;
-	stt: TSyntaxTokenType;
+	si: TSyntaxInfo;
 	part: String;
 
-	splitTokens: array of TToken;
+	splitInfo: array of TElementInfo;
 	splitElements: array of String;
 
 	lastIndex: SizeInt;
@@ -47,26 +75,26 @@ var
 	match: SizeInt;
 
 begin
-	list := TTokenList.Create(False);
+	list := TTokenList.Create(True);
 	lastChar := Length(context);
 
 	// calculate and set the required length
-	index := Ord(High(TSyntaxTokenType)) + 1 + Length(operators);
-	SetLength(splitTokens, index);
+	index := Ord(High(TSyntaxType)) + 1 + Length(operators);
+	SetLength(splitInfo, index);
 	SetLength(splitElements, index);
 	index := 0;
 
 	// add all syntax elements to the arrays
-	for stt in TSyntaxTokenType do begin
-		splitTokens[index] := TSyntaxToken.Create(stt);
-		splitElements[index] := splitTokens[index].Value;
+	for si in GetSyntaxMap() do begin
+		splitInfo[index] := MakeElementInfo(si);
+		splitElements[index] := si.symbol;
 		index += 1;
 	end;
 
 	// add all operators to the arrays
 	for op in operators do begin
-		splitTokens[index] := TOperatorToken.Create(op);
-		splitElements[index] := splitTokens[index].Value;
+		splitInfo[index] := MakeElementInfo(op);
+		splitElements[index] := op.&operator;
 		index += 1;
 	end;
 
@@ -82,7 +110,7 @@ begin
 			if index > 0 then
 				list.Add(GetSubstringToken(lastIndex, index));
 
-			list.Add(splitTokens[match]);
+			list.Add(MakeTokenFromElementInfo(splitInfo[match]));
 			lastIndex := index + Length(splitElements[match]);
 		end;
 	end;
@@ -149,13 +177,13 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 			else if currentToken is TSyntaxToken then begin
 				index += 1;
 
-				case (currentToken as TSyntaxToken).Syntax of
-					sttGroupStart: begin
+				case (currentToken as TSyntaxToken).Syntax.value of
+					stGroupStart: begin
 						node := MakeTree(index, True);
 						AddNode(node, lastOperation, @currentRoot);
 					end;
 
-					sttGroupEnd: begin
+					stGroupEnd: begin
 						inBraces := not inBraces;
 						break;
 					end;
@@ -211,13 +239,6 @@ begin
 	result := TPNStack.Create;
 	for token in sortedTokens do begin
 		result.Push(GetItemFromToken(token));
-	end;
-
-	// Free all tokens, which may have multiple pointers to the same memory
-	while tokens.Count > 0 do begin
-		token := tokens.First;
-		while tokens.Remove(token) <> -1 do;
-		token.Free();
 	end;
 
 	tokens.Free();
