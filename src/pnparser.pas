@@ -22,81 +22,70 @@ type
 { Tokenize a string. Tokens still don't know what their meaning of life is }
 function Tokenize(const context: String; const operators: TOperationsMap): TTokenList;
 var
-	list: TTokenList;
+	lastChar: SizeInt;
 
-	{ Insert one list into the index of the other, replacing a given index }
-	function ReplaceInList(const toAdd: TTokenList; atIndex: Integer): Integer;
-	var
-		token: TToken;
+	function GetSubstringToken(const first: SizeInt; last: SizeInt): TToken;
 	begin
-		list.Delete(atIndex);
+		if last > lastChar then
+			last := lastChar;
 
-		for token in toAdd do begin
-			list.Insert(atIndex, token);
-			Inc(atIndex);
-		end;
-
-		toAdd.Free();
-		result := atIndex;
-	end;
-
-	{ Divide one already split TToken into several TTokens }
-	function DivideToken(const splitData: TStringArray; const withToken: TToken): TTokenList;
-	var
-		sublist: TTokenList;
-		index: Integer;
-
-	begin
-		sublist := TTokenList.Create(False);
-
-		for index := Low(splitData) to High(splitData) - 1 do begin
-			sublist.Add(TToken.Create(splitData[index]));
-			sublist.Add(withToken);
-		end;
-
-		sublist.Add(TToken.Create(splitData[High(splitData)]));
-
-		result := sublist;
-	end;
-
-	{ Do the splitting }
-	procedure SplitTokens(const currentOperator: TToken);
-	var
-		current: TToken;
-		currentIndex: Integer;
-
-	begin
-		currentIndex := 0;
-
-		while currentIndex < list.Count do begin
-			current := list[currentIndex];
-
-			if AnsiContainsStr(current.Value, currentOperator.Value) then
-				currentIndex := ReplaceInList(
-					DivideToken(current.Value.Split([currentOperator.Value]), currentOperator),
-					currentIndex
-				)
-			else
-				Inc(currentIndex);
-		end;
+		result := TToken.Create(context.Substring(first, last - first).Trim());
 	end;
 
 var
+	list: TTokenList;
+
 	op: TOperationInfo;
 	stt: TSyntaxTokenType;
 	part: String;
 
+	splitTokens: array of TToken;
+	splitElements: array of String;
+
+	lastIndex: SizeInt;
+	index: SizeInt;
+	match: SizeInt;
+
 begin
 	list := TTokenList.Create(False);
+	lastChar := Length(context);
 
-	for part in context.split(' ') do
-		list.Add(TToken.Create(part));
+	// calculate and set the required length
+	index := Ord(High(TSyntaxTokenType)) + 1 + Length(operators);
+	SetLength(splitTokens, index);
+	SetLength(splitElements, index);
+	index := 0;
 
-	for stt in TSyntaxTokenType do
-		SplitTokens(TSyntaxToken.Create(stt));
+	// add all syntax elements to the arrays
+	for stt in TSyntaxTokenType do begin
+		splitTokens[index] := TSyntaxToken.Create(stt);
+		splitElements[index] := splitTokens[index].Value;
+		index += 1;
+	end;
 
-	for op in operators do
-		SplitTokens(TOperatorToken.Create(op));
+	// add all operators to the arrays
+	for op in operators do begin
+		splitTokens[index] := TOperatorToken.Create(op);
+		splitElements[index] := splitTokens[index].Value;
+		index += 1;
+	end;
+
+	lastIndex := 0;
+	while True do begin
+		index := context.IndexOfAny(splitElements, lastIndex, lastChar - lastIndex, match);
+
+		if index < 0 then begin
+			list.Add(GetSubstringToken(lastIndex, lastChar));
+			break;
+		end
+		else begin
+			if index > 0 then
+				list.Add(GetSubstringToken(lastIndex, index));
+
+			list.Add(splitTokens[match]);
+			lastIndex := index + Length(splitElements[match]);
+		end;
+	end;
 
 	result := list;
 end;
@@ -196,6 +185,7 @@ var
 	index: Integer;
 
 begin
+	index := 0;
 	resultTree := MakeTree(index);
 	result := TTokenList.Create(False);
 
@@ -229,6 +219,9 @@ begin
 		while tokens.Remove(token) <> -1 do;
 		token.Free();
 	end;
+
+	tokens.Free();
+	sortedTokens.Free();
 end;
 
 end.
