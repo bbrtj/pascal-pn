@@ -26,7 +26,7 @@ type
 
 	TSyntaxType = (stGroupStart, stGroupEnd);
 	TSyntaxInfo = record
-		symbol: String;
+		symbol: String[1];
 		value: TSyntaxType;
 	end;
 
