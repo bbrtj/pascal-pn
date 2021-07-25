@@ -100,7 +100,6 @@ function TransformTokenList(const tokens: TTokenList; const operators: TOperatio
 			root^ := node
 		else
 			raise Exception.Create(Format('Unexpected value %S', [GetItemValue(node.item)]));
-			// TODO
 	end;
 
 	{ Recursively transform standard notation into a tree }

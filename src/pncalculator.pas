@@ -22,8 +22,14 @@ implementation
 
 { Gets an operation handler from the operator found on the stack }
 function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler; inline;
+var
+	info: TOperationInfo;
 begin
-	result := GetOperationInfoByOperator(item.&operator, operationsMap).handler;
+	info := GetOperationInfoByOperator(item.&operator, operationsMap);
+
+	if info.operationType = otSyntax then
+		raise Exception.Create(Format('Cannot calculate syntax operator %S', [info.&operator]));
+	result := info.handler;
 end;
 
 { Performs an operation on a stack }
