@@ -32,8 +32,8 @@ var
 		if last > lastChar then
 			last := lastChar;
 
-		for part in context.Substring(first, last - first).Trim([' ']).Split(' ') do
-			if Length(part) > 0 then
+		for part in context.Substring(first, last - first).Trim(space).Split(space) do
+			if part <> String.Empty then
 				list.Add(TPNNode.Create(MakeItem(part)));
 	end;
 

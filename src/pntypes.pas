@@ -11,6 +11,9 @@ interface
 uses
 	Fgl, SysUtils;
 
+const
+	space = ' ';
+
 type
 	TNumber = Double;
 	TVariable = String[10];
