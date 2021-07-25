@@ -36,9 +36,8 @@ This notation is stored as a simple stack can be exported to a string. The progr
 There are some things that could use improvements:
 
 - Varying arity of operators, such as the currently unsupported unary `-`
-- More operators (like 0: PI, E; 1: LN, FACT; 2: LOG)
 - Unary operators: prefix and suffix variants
-- Check the code for possible refactors and memory leaks
+- Optimization, especially for the string parsing algorithm
 - More testing, possibly unit testing in Pascal
 
 ### Export format

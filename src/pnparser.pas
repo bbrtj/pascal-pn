@@ -9,7 +9,7 @@ unit PNParser;
 interface
 
 uses
-	Fgl, SysUtils, StrUtils,
+	Fgl, SysUtils,
 	PNTree, PNToken, PNCore, PNStack, PNTypes;
 
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
@@ -24,19 +24,19 @@ type
 		&operator: TOperationInfo;
 	end;
 
-function MakeElementInfo(const info: TSyntaxInfo): TElementInfo;
+function MakeElementInfo(const info: TSyntaxInfo): TElementInfo; inline;
 begin
 	result.elementType := etSyntax;
 	result.syntax := info;
 end;
 
-function MakeElementInfo(const info: TOperationInfo): TElementInfo;
+function MakeElementInfo(const info: TOperationInfo): TElementInfo; inline;
 begin
 	result.elementType := etOperator;
 	result.&operator := info;
 end;
 
-function MakeTokenFromElementInfo(const info: TElementInfo): TToken;
+function MakeTokenFromElementInfo(const info: TElementInfo): TToken; inline;
 begin
 	case info.elementType of
 		etSyntax: result := TSyntaxToken.Create(info.syntax);
@@ -52,7 +52,7 @@ function Tokenize(const context: String; const operators: TOperationsMap): TToke
 var
 	lastChar: SizeInt;
 
-	function GetSubstringToken(const first: SizeInt; last: SizeInt): TToken;
+	function GetSubstringToken(const first: SizeInt; last: SizeInt): TToken; inline;
 	begin
 		if last > lastChar then
 			last := lastChar;
@@ -65,7 +65,6 @@ var
 
 	op: TOperationInfo;
 	si: TSyntaxInfo;
-	part: String;
 
 	splitInfo: array of TElementInfo;
 	splitElements: array of String;
@@ -122,7 +121,7 @@ end;
 { Transforms prepared TTokenList into Polish notation }
 function TransformTokenList(const tokens: TTokenList): TTokenList;
 
-	procedure AddNode(const node, lastOperation: TPNNode; const root: PPNNode);
+	procedure AddNode(const node, lastOperation: TPNNode; const root: PPNNode); inline;
 	begin
 		if lastOperation <> nil then begin
 			if (lastOperation.OperationType() = otInfix) and (lastOperation.right = nil) then

@@ -35,13 +35,13 @@ begin
 end;
 
 { Performs an operation on a stack }
-function DoOperation(const op: TOperationHandler; const stack: TPNStack): TItem;
+function DoOperation(const op: TOperationHandler; const stack: TPNStack): TItem; inline;
 begin
 	result := MakeItem(op(stack));
 end;
 
 { Tries to fetch a variable value from TVariableMap }
-function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem;
+function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem; inline;
 var
 	varValue: TNumber;
 

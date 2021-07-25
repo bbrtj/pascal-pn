@@ -26,9 +26,9 @@ type
 			itOperator: (&operator: TOperator);
 	end;
 
-function MakeItem(const value: TNumber): TItem;
-function MakeItem(const value: TVariable): TItem;
-function MakeItem(const value: TOperator): TItem;
+function MakeItem(const value: TNumber): TItem; inline;
+function MakeItem(const value: TVariable): TItem; inline;
+function MakeItem(const value: TOperator): TItem; inline;
 
 implementation
 

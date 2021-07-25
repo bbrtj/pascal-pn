@@ -32,8 +32,8 @@ type
 
 	TSyntaxMap = Array of TSyntaxInfo;
 
-function GetOperationsMap(): TOperationsMap;
-function GetSyntaxMap(): TSyntaxMap;
+function GetOperationsMap(): TOperationsMap; inline;
+function GetSyntaxMap(): TSyntaxMap; inline;
 
 implementation
 

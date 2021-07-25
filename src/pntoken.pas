@@ -45,7 +45,7 @@ type
 			property Syntax: TSyntaxInfo read Fsyntax write SetSyntax;
 	end;
 
-function GetItemFromToken(const token: TToken): TItem;
+function GetItemFromToken(const token: TToken): TItem; inline;
 
 implementation
 
