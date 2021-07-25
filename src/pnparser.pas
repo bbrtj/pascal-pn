@@ -52,12 +52,16 @@ function Tokenize(const context: String; const operators: TOperationsMap): TToke
 var
 	lastChar: SizeInt;
 
-	function GetSubstringToken(const first: SizeInt; last: SizeInt): TToken; inline;
+	procedure PushSubstring(const list: TTokenList; const first: SizeInt; last: SizeInt); inline;
+	var
+		part: String;
+
 	begin
 		if last > lastChar then
 			last := lastChar;
 
-		result := TToken.Create(context.Substring(first, last - first).Trim());
+		for part in context.Substring(first, last - first).Trim([' ']).Split(' ') do
+			list.Add(TToken.Create(part));
 	end;
 
 var
@@ -103,12 +107,12 @@ begin
 		index := context.IndexOfAny(splitElements, lastIndex, lastChar - lastIndex, match);
 
 		if index < 0 then begin
-			list.Add(GetSubstringToken(lastIndex, lastChar));
+			PushSubstring(list, lastIndex, lastChar);
 			break;
 		end
 		else begin
 			if index > 0 then
-				list.Add(GetSubstringToken(lastIndex, index));
+				PushSubstring(list, lastIndex, index);
 
 			list.Add(MakeTokenFromElementInfo(splitInfo[match]));
 			lastIndex := index + Length(splitElements[match]);

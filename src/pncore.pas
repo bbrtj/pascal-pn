@@ -38,18 +38,18 @@ function GetSyntaxMap(): TSyntaxMap; inline;
 implementation
 
 { Get the next argument from the stack, raise an exception if not possible }
-function NextArg(const stack: TPNStack): TNumber;
+function NextArg(const stack: TPNStack): TNumber; inline;
 var
 	popped: TItem;
 
 begin
 	if stack.Empty() then
-		raise Exception.Create('Invalid Polish notation');
+		raise Exception.Create('Invalid Polish notation: stack is empty, cannot get operand');
 
 	popped := stack.Pop();
 
 	if popped.itemType <> itNumber then
-		raise Exception.Create('Invalid Polish notation');
+		raise Exception.Create('Invalid Polish notation: a number was expected');
 
 	result := popped.number;
 end;
@@ -58,28 +58,28 @@ end;
 function OpAddition(const stack: TPNStack): TNumber;
 begin
 	result := NextArg(stack);
-	result := result + NextArg(stack);
+	result += NextArg(stack);
 end;
 
 { Handler for - }
 function OpSubstraction(const stack: TPNStack): TNumber;
 begin
 	result := NextArg(stack);
-	result := result - NextArg(stack);
+	result -= NextArg(stack);
 end;
 
 { Handler for * }
 function OpMultiplication(const stack: TPNStack): TNumber;
 begin
 	result := NextArg(stack);
-	result := result * NextArg(stack);
+	result *= NextArg(stack);
 end;
 
 { Handler for / }
 function OpDivision(const stack: TPNStack): TNumber;
 begin
 	result := NextArg(stack);
-	result := result / NextArg(stack);
+	result /= NextArg(stack);
 end;
 
 { Handler for ^ }
