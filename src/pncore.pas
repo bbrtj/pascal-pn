@@ -13,27 +13,23 @@ uses
 	PNStack, PNTypes;
 
 type
+	TSyntaxType = (stGroupStart, stGroupEnd);
+
 	TOperationHandler = function (const stack: TPNStack): TNumber;
-	TOperationType = (otInfix);
+	TOperationType = (otSyntax, otInfix);
 	TOperationInfo = record
 		&operator: TOperator;
 		handler: TOperationHandler;
 		priority: Byte;
 		operationType: TOperationType;
+		syntax: TSyntaxType;
 	end;
 
 	TOperationsMap = Array of TOperationInfo;
 
-	TSyntaxType = (stGroupStart, stGroupEnd);
-	TSyntaxInfo = record
-		symbol: String[1];
-		value: TSyntaxType;
-	end;
-
-	TSyntaxMap = Array of TSyntaxInfo;
 
 function GetOperationsMap(): TOperationsMap; inline;
-function GetSyntaxMap(): TSyntaxMap; inline;
+function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo; inline;
 
 implementation
 
@@ -105,6 +101,13 @@ begin
 	result.operationType := otInfix;
 end;
 
+function MakeSyntax(const symbol: TOperator; const value: TSyntaxType): TOperationInfo;
+begin
+	result.operationType := otSyntax;
+	result.&operator := symbol;
+	result.syntax := value;
+end;
+
 function GetOperationsMap(): TOperationsMap;
 begin
 	result := TOperationsMap.Create(
@@ -113,22 +116,23 @@ begin
 		MakeInfo('*', @OpMultiplication, 2),
 		MakeInfo('/', @OpDivision, 2),
 		MakeInfo('%', @OpModulo, 2),
-		MakeInfo('^', @OpPower, 3)
-	);
-end;
-
-function MakeSyntax(const symbol: String; const value: TSyntaxType): TSyntaxInfo;
-begin
-	result.symbol := symbol;
-	result.value := value;
-end;
-
-function GetSyntaxMap(): TSyntaxMap;
-begin
-	result := TSyntaxMap.Create(
+		MakeInfo('^', @OpPower, 3),
 		MakeSyntax('(', stGroupStart),
 		MakeSyntax(')', stGroupEnd)
 	);
+end;
+
+function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo;
+var
+	info: TOperationInfo;
+
+begin
+	for info in map do begin
+		if info.&operator = op then
+			Exit(info);
+	end;
+
+	raise Exception.Create('Invalid operator ' + op);
 end;
 
 end.

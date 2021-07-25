@@ -9,14 +9,15 @@ unit PNTree;
 interface
 
 uses
-	PNToken, PNCore;
+	PNCore, PNTypes;
 
 type
 	PPNNode = ^TPNNode;
 
 	TPNNode = class
 		private
-			FToken: TToken;
+			FItem: TItem;
+			FOpInfo: TOperationInfo;
 
 			FLeft: TPNNode;
 			FRight: TPNNode;
@@ -25,17 +26,17 @@ type
 			procedure SetLeft(const node: TPNNode);
 			procedure SetRight(const node: TPNNode);
 		public
-			constructor Create(const token: TToken);
+			constructor Create(const item: TItem);
 			destructor Destroy; override;
 
-			function IsOperation(): Boolean;
 			function OperationPriority(): Byte;
 			function OperationType(): TOperationType;
 
-			property token: TToken read FToken write FToken;
+			property item: TItem read FItem;
 			property left: TPNNode read FLeft write SetLeft;
 			property right: TPNNode read FRight write SetRight;
 			property parent: TPNNode read FParent write FParent;
+			property operationInfo: TOperationInfo read FOpInfo write FOpInfo;
 
 			function NextInorder(): TPNNode;
 	end;
@@ -43,9 +44,9 @@ type
 implementation
 
 {}
-constructor TPNNode.Create(const token: TToken);
+constructor TPNNode.Create(const item: TItem);
 begin
-	FToken := token;
+	FItem := item;
 	FLeft := nil;
 	FRight := nil;
 	FParent := nil;
@@ -54,7 +55,7 @@ end;
 {}
 destructor TPNNode.Destroy;
 begin
-	// do not free the token or the parent
+	// do not free the parent
 	FLeft.Free();
 	FRight.Free();
 end;
@@ -77,23 +78,18 @@ begin
 	node.parent := self;
 end;
 
-{ Check whether the node stores an operation }
-function TPNNode.IsOperation(): Boolean;
-begin
-	result := FToken is TOperatorToken;
-end;
-
 { Get the priority of an operation stored }
 function TPNNode.OperationPriority(): Byte;
 begin
-	result := (FToken as TOperatorToken).&Operator.priority;
+	result := FOpInfo.priority;
 end;
 
 { Get the type of an operation stored }
 function TPNNode.OperationType(): TOperationType;
 begin
-	result := (FToken as TOperatorToken).&Operator.operationType;
+	result := FOpInfo.operationType;
 end;
+
 
 { Traverse the tree Inorder }
 function TPNNode.NextInorder(): TPNNode;

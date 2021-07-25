@@ -10,42 +10,14 @@ interface
 
 uses
 	Fgl, SysUtils,
-	PNTree, PNToken, PNCore, PNStack, PNTypes;
+	PNTree, PNCore, PNStack, PNTypes;
 
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
 
 implementation
 
 type
-	TElementType = (etSyntax, etOperator);
-	TElementInfo = record
-		elementType: TElementType;
-		syntax: TSyntaxInfo;
-		&operator: TOperationInfo;
-	end;
-
-function MakeElementInfo(const info: TSyntaxInfo): TElementInfo; inline;
-begin
-	result.elementType := etSyntax;
-	result.syntax := info;
-end;
-
-function MakeElementInfo(const info: TOperationInfo): TElementInfo; inline;
-begin
-	result.elementType := etOperator;
-	result.&operator := info;
-end;
-
-function MakeTokenFromElementInfo(const info: TElementInfo): TToken; inline;
-begin
-	case info.elementType of
-		etSyntax: result := TSyntaxToken.Create(info.syntax);
-		etOperator: result := TOperatorToken.Create(info.&operator);
-	end;
-end;
-
-type
-	TTokenList = specialize TFPGObjectList<TToken>;
+	TTokenList = specialize TFPGObjectList<TPNNode>;
 
 { Tokenize a string. Tokens still don't know what their meaning of life is }
 function Tokenize(const context: String; const operators: TOperationsMap): TTokenList;
@@ -61,16 +33,15 @@ var
 			last := lastChar;
 
 		for part in context.Substring(first, last - first).Trim([' ']).Split(' ') do
-			list.Add(TToken.Create(part));
+			if Length(part) > 0 then
+				list.Add(TPNNode.Create(MakeItem(part)));
 	end;
 
 var
 	list: TTokenList;
 
 	op: TOperationInfo;
-	si: TSyntaxInfo;
 
-	splitInfo: array of TElementInfo;
 	splitElements: array of String;
 
 	lastIndex: SizeInt;
@@ -78,26 +49,16 @@ var
 	match: SizeInt;
 
 begin
-	list := TTokenList.Create(True);
+	list := TTokenList.Create(False);
 	lastChar := Length(context);
 	list.Capacity := lastChar;
 
 	// calculate and set the required length
-	index := Ord(High(TSyntaxType)) + 1 + Length(operators);
-	SetLength(splitInfo, index);
-	SetLength(splitElements, index);
+	SetLength(splitElements, Length(operators));
 	index := 0;
-
-	// add all syntax elements to the arrays
-	for si in GetSyntaxMap() do begin
-		splitInfo[index] := MakeElementInfo(si);
-		splitElements[index] := si.symbol;
-		index += 1;
-	end;
 
 	// add all operators to the arrays
 	for op in operators do begin
-		splitInfo[index] := MakeElementInfo(op);
 		splitElements[index] := op.&operator;
 		index += 1;
 	end;
@@ -114,7 +75,7 @@ begin
 			if index > 0 then
 				PushSubstring(list, lastIndex, index);
 
-			list.Add(MakeTokenFromElementInfo(splitInfo[match]));
+			list.Add(TPNNode.Create(MakeItem(TOperator(splitElements[match]))));
 			lastIndex := index + Length(splitElements[match]);
 		end;
 	end;
@@ -123,7 +84,7 @@ begin
 end;
 
 { Transforms prepared TTokenList into Polish notation }
-function TransformTokenList(const tokens: TTokenList): TTokenList;
+function TransformTokenList(const tokens: TTokenList; const operators: TOperationsMap): TPNNode;
 
 	procedure AddNode(const node, lastOperation: TPNNode; const root: PPNNode); inline;
 	begin
@@ -132,13 +93,14 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 				lastOperation.right := node
 			else
 				raise Exception.Create(
-					Format('Unexpected %S (operator %S)', [node.token.Value, lastOperation.token.Value])
+					Format('Unexpected value %S (operator %S)', [GetItemValue(node.item), lastOperation.item.&operator])
 				);
 		end
 		else if root^ = nil then
 			root^ := node
 		else
-			raise Exception.Create(Format('Unexpected %S', [node.token.Value]));
+			raise Exception.Create(Format('Unexpected value %S', [GetItemValue(node.item)]));
+			// TODO
 	end;
 
 	{ Recursively transform standard notation into a tree }
@@ -149,58 +111,52 @@ function TransformTokenList(const tokens: TTokenList): TTokenList;
 		node: TPNNode;
 		tmp: TPNNode;
 
-		currentToken: TToken;
-
 	begin
 		lastOperation := nil;
 		currentRoot := nil;
 
 		while index < tokens.Count do begin
-			currentToken := tokens[index];
+			node := tokens[index];
 
-			if currentToken is TOperatorToken then begin
-				node := TPNNode.Create(currentToken);
+			if node.item.itemType = itOperator then begin
+				node.operationInfo := GetOperationInfoByOperator(node.item.&operator, operators);
 
-				while (lastOperation <> nil) and (lastOperation.OperationPriority() >= node.OperationPriority()) do
-					lastOperation := lastOperation.parent;
+				if node.OperationType() = otSyntax then begin
+					case node.operationInfo.syntax of
+						stGroupStart: begin
+							index += 1;
+							node := MakeTree(index, True);
+							AddNode(node, lastOperation, @currentRoot);
+						end;
 
-				if lastOperation = nil then begin
-					node.left := currentRoot;
-					currentRoot := node;
+						stGroupEnd: begin
+							inBraces := not inBraces;
+							break;
+						end;
+					end;
 				end
 
 				else begin
-					tmp := lastOperation.right;
-					lastOperation.right := node;
-					node.left := tmp;
-				end;
+					while (lastOperation <> nil) and (lastOperation.OperationPriority() >= node.OperationPriority()) do
+						lastOperation := lastOperation.parent;
 
-				lastOperation := node;
-			end
+					if lastOperation = nil then begin
+						node.left := currentRoot;
+						currentRoot := node;
+					end
 
-			else if currentToken is TSyntaxToken then begin
-				index += 1;
-
-				case (currentToken as TSyntaxToken).Syntax.value of
-					stGroupStart: begin
-						node := MakeTree(index, True);
-						AddNode(node, lastOperation, @currentRoot);
+					else begin
+						tmp := lastOperation.right;
+						lastOperation.right := node;
+						node.left := tmp;
 					end;
 
-					stGroupEnd: begin
-						inBraces := not inBraces;
-						break;
-					end;
+					lastOperation := node;
 				end;
-
 			end
 
-			else begin
-				if Length(currentToken.Value) > 0 then begin
-					node := TPNNode.Create(currentToken);
-					AddNode(node, lastOperation, @currentRoot);
-				end;
-			end;
+			else
+				AddNode(node, lastOperation, @currentRoot);
 
 			index += 1;
 		end;
@@ -218,36 +174,25 @@ var
 
 begin
 	index := 0;
-	resultTree := MakeTree(index);
-	result := TTokenList.Create(False);
-	result.Capacity := tokens.Capacity;
-
-	treeNode := resultTree;
-	while treeNode <> nil do begin
-		result.Add(treeNode.token);
-		treeNode := treeNode.NextInorder();
-	end;
-
-	resultTree.Free();
+	result := MakeTree(index);
 end;
 
 { Parses the entire calculation }
 function Parse(const input: String; const operators: TOperationsMap): TPNStack;
 var
 	tokens: TTokenList;
-	sortedTokens: TTokenList;
-	token: TToken;
+	node: TPNNode;
 begin
 	tokens := Tokenize(input, operators);
-	sortedTokens := TransformTokenList(tokens);
+	node := TransformTokenList(tokens, operators);
 
 	result := TPNStack.Create;
-	for token in sortedTokens do begin
-		result.Push(GetItemFromToken(token));
+	while node <> nil do begin
+		result.Push(node.item);
+		node := node.NextInorder();
 	end;
 
 	tokens.Free();
-	sortedTokens.Free();
 end;
 
 end.

@@ -9,7 +9,7 @@ unit PNTypes;
 interface
 
 uses
-	Fgl;
+	Fgl, SysUtils;
 
 type
 	TNumber = Double;
@@ -27,8 +27,10 @@ type
 	end;
 
 function MakeItem(const value: TNumber): TItem; inline;
+function MakeItem(const value: String): TItem; inline;
 function MakeItem(const value: TVariable): TItem; inline;
 function MakeItem(const value: TOperator): TItem; inline;
+function GetItemValue(const item: TItem): String; inline;
 
 implementation
 
@@ -46,11 +48,33 @@ begin
 	result.variable := value;
 end;
 
+{ Creates TItem from a string (guess) }
+function MakeItem(const value: String): TItem;
+var
+	numval: TNumber;
+begin
+	if TryStrToFloat(value, numval) then
+		result := MakeItem(numval)
+	else if IsValidIdent(value) then
+		result := MakeItem(TVariable(value))
+	else
+		raise Exception.Create('Invalid token ' + value);
+end;
+
 { Creates TItem from TOperator }
 function MakeItem(const value: TOperator): TItem;
 begin
 	result.itemType := itOperator;
 	result.&operator := value;
+end;
+
+function GetItemValue(const item: TItem): String;
+begin
+	case item.itemType of
+		itNumber: result := String(item.number);
+		itVariable: result := item.variable;
+		itOperator: result := item.&operator;
+	end;
 end;
 
 end.

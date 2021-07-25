@@ -21,17 +21,9 @@ function Calculate(
 implementation
 
 { Gets an operation handler from the operator found on the stack }
-function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler;
-var
-	info: TOperationInfo;
-
+function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler; inline;
 begin
-	for info in operationsMap do begin
-		if info.&operator = item.&operator then
-			Exit(info.handler);
-	end;
-
-	raise Exception.Create('Invalid operator ' + item.&operator);
+	result := GetOperationInfoByOperator(item.&operator, operationsMap).handler;
 end;
 
 { Performs an operation on a stack }
