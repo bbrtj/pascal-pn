@@ -22,38 +22,10 @@ type
 { Tokenize a string. Tokens still don't know what their meaning of life is }
 function Tokenize(context: String; const operators: TOperationsMap): TTokenList;
 var
-	lastChar: SizeInt;
-
-	procedure PushSubstring(const list: TTokenList; const first: SizeInt; last: SizeInt; isOp: Boolean); inline;
-	var
-		part: String;
-
-	begin
-		if last > lastChar then
-			last := lastChar;
-
-		// TODO: TStringSplitOptions.ExcludeEmpty - not working?
-		for part in context.Substring(first, last - first + 1).Split(space) do begin;
-			if part <> String.Empty then begin
-				if isOp then
-					list.Add(TPNNode.Create(MakeItem(TOperator(part))))
-				else
-					list.Add(TPNNode.Create(MakeItem(part)));
-			end;
-		end;
-	end;
-
-const
-	delim = '\';
-
-var
 	list: TTokenList;
 
+	part: String;
 	op: TOperationInfo;
-	isOp: Boolean;
-
-	lastIndex: SizeInt;
-	index: SizeInt;
 
 begin
 	list := TTokenList.Create(False);
@@ -61,25 +33,17 @@ begin
 
 	// add all operators to the arrays
 	for op in operators do begin
-		context := context.Replace(op.&operator, delim + op.&operator + delim, [rfReplaceAll]);
+		context := context.Replace(op.&operator, space + op.&operator + space, [rfReplaceAll]);
 	end;
 
-	lastIndex := 0;
-	lastChar := Length(context);
-	isOp := False;
-	while True do begin
-		index := context.indexOf(delim, lastIndex);
-
-		if index < 0 then begin
-			PushSubstring(list, lastIndex, lastChar, isOp);
-			break;
-		end
-		else begin
-			PushSubstring(list, lastIndex, index - 1, isOp);
-			lastIndex := index + 1;
+	for part in context.Split(space, TStringSplitOptions.ExcludeEmpty) do begin;
+		// TODO: ExcludeEmpty not fully woring?
+		if part <> String.Empty then begin
+			if IsOperator(part, operators) then
+				list.Add(TPNNode.Create(MakeItem(TOperator(part))))
+			else
+				list.Add(TPNNode.Create(MakeItem(part)));
 		end;
-
-		isOp := not isOp;
 	end;
 
 	result := list;

@@ -29,6 +29,7 @@ type
 
 
 function GetOperationsMap(): TOperationsMap; inline;
+function IsOperator(const op: String; const map: TOperationsMap): Boolean; inline;
 function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo; inline;
 
 implementation
@@ -120,6 +121,19 @@ begin
 		MakeSyntax('(', stGroupStart),
 		MakeSyntax(')', stGroupEnd)
 	);
+end;
+
+function IsOperator(const op: String; const map: TOperationsMap): Boolean;
+var
+	info: TOperationInfo;
+
+begin
+	for info in map do begin
+		if info.&operator = op then
+			Exit(True);
+	end;
+
+	result := False;
 end;
 
 function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo;
