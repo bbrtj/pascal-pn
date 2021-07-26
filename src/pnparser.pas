@@ -20,11 +20,11 @@ type
 	TTokenList = specialize TFPGObjectList<TPNNode>;
 
 { Tokenize a string. Tokens still don't know what their meaning of life is }
-function Tokenize(const context: String; const operators: TOperationsMap): TTokenList;
+function Tokenize(context: String; const operators: TOperationsMap): TTokenList;
 var
 	lastChar: SizeInt;
 
-	procedure PushSubstring(const list: TTokenList; const first: SizeInt; last: SizeInt); inline;
+	procedure PushSubstring(const list: TTokenList; const first: SizeInt; last: SizeInt; isOp: Boolean); inline;
 	var
 		part: String;
 
@@ -32,52 +32,54 @@ var
 		if last > lastChar then
 			last := lastChar;
 
-		for part in context.Substring(first, last - first).Trim(space).Split(space) do
-			if part <> String.Empty then
-				list.Add(TPNNode.Create(MakeItem(part)));
+		// TODO: TStringSplitOptions.ExcludeEmpty - not working?
+		for part in context.Substring(first, last - first + 1).Split(space) do begin;
+			if part <> String.Empty then begin
+				if isOp then
+					list.Add(TPNNode.Create(MakeItem(TOperator(part))))
+				else
+					list.Add(TPNNode.Create(MakeItem(part)));
+			end;
+		end;
 	end;
+
+const
+	delim = '\';
 
 var
 	list: TTokenList;
 
 	op: TOperationInfo;
-
-	splitElements: array of String;
+	isOp: Boolean;
 
 	lastIndex: SizeInt;
 	index: SizeInt;
-	match: SizeInt;
 
 begin
 	list := TTokenList.Create(False);
-	lastChar := Length(context);
-	list.Capacity := lastChar;
-
-	// calculate and set the required length
-	SetLength(splitElements, Length(operators));
-	index := 0;
+	list.Capacity := Length(context);
 
 	// add all operators to the arrays
 	for op in operators do begin
-		splitElements[index] := op.&operator;
-		index += 1;
+		context := context.Replace(op.&operator, delim + op.&operator + delim, [rfReplaceAll]);
 	end;
 
 	lastIndex := 0;
+	lastChar := Length(context);
+	isOp := False;
 	while True do begin
-		index := context.IndexOfAny(splitElements, lastIndex, lastChar - lastIndex, match);
+		index := context.indexOf(delim, lastIndex);
 
 		if index < 0 then begin
-			PushSubstring(list, lastIndex, lastChar);
+			PushSubstring(list, lastIndex, lastChar, isOp);
 			break;
 		end
 		else begin
-			if index > 0 then
-				PushSubstring(list, lastIndex, index);
-
-			list.Add(TPNNode.Create(MakeItem(TOperator(splitElements[match]))));
-			lastIndex := index + Length(splitElements[match]);
+			PushSubstring(list, lastIndex, index - 1, isOp);
+			lastIndex := index + 1;
 		end;
+
+		isOp := not isOp;
 	end;
 
 	result := list;
