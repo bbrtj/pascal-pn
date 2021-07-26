@@ -14,33 +14,56 @@ uses
 
 type
 
-	TPNStack = class(TStack)
+	TPNBaseStack = class abstract(TStack)
+		public
+			destructor Destroy; override;
+
+			function Empty(): Boolean;
+			procedure Clear();
+	end;
+
+	TPNStack = class(TPNBaseStack)
 		public
 			const
 				separatorChar = '#';
 				operatorPrefixChar = 'o';
 				variablePrefixChar = 'v';
 
-			destructor Destroy; override;
-
 			procedure Push(const item: TItem);
 			function Pop(): TItem;
 			function Top(): TItem;
-
-			function Empty(): Boolean;
-			procedure Clear();
 
 			function ToString(): String; override;
 			class function FromString(const input: String): TPNStack;
 	end;
 
+	TPNNumberStack = class(TPNBaseStack)
+		public
+			procedure Push(const item: TNumber);
+			function Pop(): TNumber;
+			function Top(): TNumber;
+	end;
+
 implementation
 
 {}
-destructor TPNStack.Destroy;
+destructor TPNBaseStack.Destroy;
 begin
 	Clear();
 	inherited;
+end;
+
+{ Checks whether the stack is empty }
+function TPNBaseStack.Empty(): Boolean;
+begin
+	result := not AtLeast(1);
+end;
+
+{ Clear the stack }
+procedure TPNBaseStack.Clear();
+begin
+	while not Empty() do
+		Pop();
 end;
 
 { Pushes on top of the stack }
@@ -70,18 +93,6 @@ var
 begin
 	res := Peek();
 	result := TItem(res^);
-end;
-
-{ Checks whether the stack is empty }
-function TPNStack.Empty(): Boolean;
-begin
-	result := not AtLeast(1);
-end;
-
-procedure TPNStack.Clear();
-begin
-	while not Empty() do
-		Pop();
 end;
 
 { Exports to string, destroys the stack in the process }
@@ -139,6 +150,35 @@ begin
 	end;
 
 	result := stack;
+end;
+
+{ Pushes on top of the stack }
+procedure TPNNumberStack.Push(const item: TNumber);
+var
+	res: ^TNumber;
+begin
+	New(res);
+	res^ := item;
+	inherited Push(res);
+end;
+
+{ Pops the top of the stack }
+function TPNNumberStack.Pop(): TNumber;
+var
+	res: ^TNumber;
+begin
+	res := inherited Pop();
+	result := TNumber(res^);
+	Dispose(res);
+end;
+
+{ Returns the top of the stack without poping it }
+function TPNNumberStack.Top(): TNumber;
+var
+	res: ^TNumber;
+begin
+	res := Peek();
+	result := TNumber(res^);
 end;
 
 end.

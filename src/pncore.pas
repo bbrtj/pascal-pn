@@ -15,7 +15,7 @@ uses
 type
 	TSyntaxType = (stGroupStart, stGroupEnd);
 
-	TOperationHandler = function (const stack: TPNStack): TNumber;
+	TOperationHandler = function (const stack: TPNNumberStack): TNumber;
 	TOperationType = (otSyntax, otInfix);
 	TOperationInfo = record
 		&operator: TOperator;
@@ -30,64 +30,56 @@ type
 
 function GetOperationsMap(): TOperationsMap; inline;
 function IsOperator(const op: String; const map: TOperationsMap): Boolean; inline;
-function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo; inline;
+function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap; const noSyntax: Boolean = False): TOperationInfo;
 
 implementation
 
 { Get the next argument from the stack, raise an exception if not possible }
-function NextArg(const stack: TPNStack): TNumber; inline;
-var
-	popped: TItem;
-
+function NextArg(const stack: TPNNumberStack): TNumber; inline;
 begin
 	if stack.Empty() then
 		raise Exception.Create('Invalid Polish notation: stack is empty, cannot get operand');
 
-	popped := stack.Pop();
-
-	if popped.itemType <> itNumber then
-		raise Exception.Create('Invalid Polish notation: a number was expected');
-
-	result := popped.number;
+	result := stack.Pop();
 end;
 
 { Handler for + }
-function OpAddition(const stack: TPNStack): TNumber;
+function OpAddition(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result += NextArg(stack);
 end;
 
 { Handler for - }
-function OpSubstraction(const stack: TPNStack): TNumber;
+function OpSubstraction(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result -= NextArg(stack);
 end;
 
 { Handler for * }
-function OpMultiplication(const stack: TPNStack): TNumber;
+function OpMultiplication(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result *= NextArg(stack);
 end;
 
 { Handler for / }
-function OpDivision(const stack: TPNStack): TNumber;
+function OpDivision(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result /= NextArg(stack);
 end;
 
 { Handler for ^ }
-function OpPower(const stack: TPNStack): TNumber;
+function OpPower(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result := result ** NextArg(stack);
 end;
 
 { Handler for % }
-function OpModulo(const stack: TPNStack): TNumber;
+function OpModulo(const stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(stack);
 	result := FMod(result, NextArg(stack));
@@ -136,13 +128,13 @@ begin
 	result := False;
 end;
 
-function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap): TOperationInfo;
+function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap; const noSyntax: Boolean = False): TOperationInfo;
 var
 	info: TOperationInfo;
 
 begin
 	for info in map do begin
-		if info.&operator = op then
+		if (info.&operator = op) and ((not noSyntax) or (info.operationType <> otSyntax)) then
 			Exit(info);
 	end;
 

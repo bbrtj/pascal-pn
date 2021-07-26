@@ -20,36 +20,6 @@ function Calculate(
 
 implementation
 
-{ Gets an operation handler from the operator found on the stack }
-function getOperationHandler(const item: TItem; const operationsMap: TOperationsMap): TOperationHandler; inline;
-var
-	info: TOperationInfo;
-begin
-	info := GetOperationInfoByOperator(item.&operator, operationsMap);
-
-	if info.operationType = otSyntax then
-		raise Exception.Create(Format('Cannot calculate syntax operator %S', [info.&operator]));
-	result := info.handler;
-end;
-
-{ Performs an operation on a stack }
-function DoOperation(const op: TOperationHandler; const stack: TPNStack): TItem; inline;
-begin
-	result := MakeItem(op(stack));
-end;
-
-{ Tries to fetch a variable value from TVariableMap }
-function ResolveVariable(const item: TItem; const variables: TVariableMap): TItem; inline;
-var
-	varValue: TNumber;
-
-begin
-	if not variables.TryGetData(item.variable, varValue) then
-		raise Exception.Create('Variable ' + item.variable + ' was not defined');
-
-	result := MakeItem(varValue);
-end;
-
 { Calculates a result from a Polish notation stack }
 function Calculate(
 	const mainStack: TPNStack;
@@ -57,46 +27,47 @@ function Calculate(
 	const operationsMap: TOperationsMap
 ): TNumber;
 
-var
-	localStack: TPNStack;
-	count: Integer;
+	{ Tries to fetch a variable value from TVariableMap }
+	function ResolveVariable(const item: TItem; const variables: TVariableMap): TNumber; inline;
+	var
+		varValue: TNumber;
 
+	begin
+		if not variables.TryGetData(item.variable, varValue) then
+			raise Exception.Create('Variable ' + item.variable + ' was not defined');
+
+		result := varValue;
+	end;
+
+var
+	localStack: TPNNumberStack;
 	item: TItem;
 
 begin
-	localStack := TPNStack.Create;
+	localStack := TPNNumberStack.Create;
 
-	// main calculationl loop
+	// main calculation loop
 	while not mainStack.Empty() do begin
 		item := mainStack.Pop();
 
 		if item.itemType = itOperator then
-			localStack.Push(DoOperation(getOperationHandler(item, operationsMap), localStack))
+			localStack.Push(GetOperationInfoByOperator(item.&operator, operationsMap, True).handler(localStack))
 
-		else begin
-			if item.itemType = itVariable then
-				item := ResolveVariable(item, variables);
+		else if item.itemType = itVariable then
+			localStack.Push(ResolveVariable(item, variables))
 
-			localStack.Push(item);
-		end;
+		else
+			localStack.Push(item.number);
 	end;
 
-	count := 0;
-	while not localStack.Empty() do begin
-		mainStack.Push(localStack.Pop());
-		count := count + 1
-	end;
+	result := localStack.Pop();
 
-	FreeAndNil(localStack);
-
-	if count <> 1 then
+	if not localStack.Empty then
 		raise Exception.Create('Invalid Polish notation');
+	localStack.Free();
 
-	item := mainStack.Top();
-	if item.itemType <> itNumber then
-		raise Exception.Create('Polish notation result not a number');
-
-	result := item.number;
+	// any further recalculations will return the value again
+	mainStack.Push(MakeItem(result));
 end;
 
 end.
