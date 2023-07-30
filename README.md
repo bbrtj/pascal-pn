@@ -58,9 +58,13 @@ The idea is that it unambigously describes the stack:
 - any stack item prefixed with a `v` character is a variable
 - any other stack item must contain a number, and is considered a constant
 
-Since there's no need to do any parsing on such string, its importing should be very fast. This exported format can be stored and only imported on demand to perform calculations without any need for parsing the original calculation in standard notation.
+Since there's no need to do any parsing on such string, its importing should be
+very fast. This exported format can be stored and only imported on demand to
+perform calculations without any need for parsing the original calculation in
+standard notation.
 
-Transforming this format into a regular Polish notation should be easy enough with any text manipulation tool:
+Transforming this format into a regular Polish notation should be easy enough
+with any text manipulation tool:
 
 ```
 cat exported.txt | perl -pn -e '
@@ -74,7 +78,8 @@ cat exported.txt | perl -pn -e '
 
 Free Pascal Compiler with Object Pascal RTL is required to build.
 
-Makefile contents should suffice for most building needs. To build an optimized CLI binary:
+Makefile contents should suffice for most building needs. To build an optimized
+CLI binary:
 
 ```
 O_LEVEL=3 make build
@@ -88,14 +93,12 @@ O_LEVEL=3 make build-library
 
 ## Testing
 
-Tests are written in Perl and query the CLI program for results. Any Perl should be able to run them out of the box.
+Unit tests are written in Pascal, while end to end tests are written in Perl
+(querying the CLI program for results). Any Perl should be able to run them out
+of the box.
 
 ```
 make test
-
-# OR
-
-make &&  prove
 ```
 
 ## Author and License

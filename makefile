@@ -3,6 +3,9 @@ BUILD_DIR ?= build
 SOURCE_DIR ?= src
 FPC_FLAGS ?= -v0web -Sic -FE$(BUILD_DIR) -Fu$(SOURCE_DIR)
 O_LEVEL ?= 1
+TEST_RUNNER ?= prove
+TEST_VERBOSE ?= 0
+TEST_FLAG ?= $$(if [ $(TEST_VERBOSE) == 1 ]; then echo "--verbose"; fi)
 
 build: prepare
 	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) -opncli endpoints/cli.pp
@@ -10,8 +13,11 @@ build: prepare
 build-library: prepare
 	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) endpoints/lib.pas
 
-test: build
-	prove
+build-test: prepare
+	for file in t/*.t.pas; do $(FPC) $(FPC_FLAGS) -Fut/pascal-tap/src $${file}; done
+
+test: build build-test
+	$(TEST_RUNNER) build t/e2e/*.t $(TEST_FLAG)
 
 debug: prepare
 	$(FPC) -g -gl $(FPC_FLAGS) -odebcli endpoints/cli.pp
