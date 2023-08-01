@@ -17,7 +17,7 @@ build-test: prepare
 	$(FPC) $(FPC_FLAGS) -Fut/lib -Fut/pascal-tap/src -FU$(BUILD_DIR) -ot/tests.t t/tests.t.pas
 
 test: build build-test
-	$(TEST_RUNNER) t t/e2e $(TEST_FLAG)
+	$(TEST_RUNNER) t t/cli $(TEST_FLAG)
 
 debug: prepare
 	$(FPC) -g -gl $(FPC_FLAGS) -odebcli endpoints/cli.pp
