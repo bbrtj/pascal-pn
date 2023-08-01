@@ -1,10 +1,11 @@
 program PNUnitTest;
 
 uses TAPSuite,
-	BaseTests;
+	BaseTests, CalcTests;
 
 begin
 	Suite(TBaseSuite);
+	Suite(TCalculationsSuite);
 
 	RunAllSuites;
 end.

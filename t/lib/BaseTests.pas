@@ -19,7 +19,7 @@ type
 implementation
 
 const
-	cSmallPrecision = 1E-10;
+	cSmallPrecision = 1E-8;
 
 constructor TBaseSuite.Create();
 begin

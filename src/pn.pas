@@ -42,7 +42,6 @@ implementation
 {}
 constructor TPN.Create;
 begin
-	inherited;
 	operationsMap := GetOperationsMap();
 	variableMap := TVariableMap.Create;
 end;
@@ -104,3 +103,4 @@ begin
 end;
 
 end.
+
