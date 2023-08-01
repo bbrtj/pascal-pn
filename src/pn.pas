@@ -49,7 +49,8 @@ end;
 {}
 destructor TPN.Destroy;
 begin
-	currentStack.Free();
+	if currentStack <> nil then
+		currentStack.Free();
 	variableMap.Free();
 	inherited;
 end;
