@@ -16,8 +16,14 @@ build-library: prepare
 build-test: prepare
 	$(FPC) $(FPC_FLAGS) -Fut/lib -Fut/pascal-tap/src -FU$(BUILD_DIR) -ot/tests.t t/tests.t.pas
 
+build-bench: prepare
+	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) endpoints/bench.pp
+
 test: build build-test
 	$(TEST_RUNNER) t t/cli $(TEST_FLAG)
+
+bench: build-bench
+	time build/bench
 
 debug: prepare
 	$(FPC) -g -gl $(FPC_FLAGS) -odebcli endpoints/cli.pp
