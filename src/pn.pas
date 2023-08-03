@@ -15,92 +15,87 @@ uses
 type
 
 	TPN = class
-		protected
-			operationsMap: TOperationsMap;
-			variableMap: TVariableMap;
+	strict private
+		FVariableMap: TVariableMap;
+		FCurrentStack: TPNStack;
 
-			currentStack: TPNStack;
-			procedure SetStack(const stack: TPNStack);
+		procedure SetStack(vStack: TPNStack);
 
-		public
-			constructor Create;
-			destructor Destroy; override;
+	public
+		constructor Create;
+		destructor Destroy; override;
 
-			procedure ImportString(const exported: String);
-			function ExportString(): String;
+		procedure ImportString(const vExported: String);
+		function ExportString(): String;
 
-			procedure DefineVariable(const variable: TVariable; const number: TNumber);
-			procedure ClearVariables();
+		procedure DefineVariable(const vVariable: TVariableName; vNumber: TNumber);
+		procedure ClearVariables();
 
-			procedure ParseString(const input: String);
-			function GetResult(): TNumber;
+		procedure ParseString(const vInput: String);
+		function GetResult(): TNumber;
 
 	end;
 
 implementation
 
-{}
 constructor TPN.Create;
 begin
-	operationsMap := GetOperationsMap();
-	variableMap := TVariableMap.Create;
+	FVariableMap := TVariableMap.Create;
 end;
 
-{}
 destructor TPN.Destroy;
 begin
-	if currentStack <> nil then
-		currentStack.Free();
-	variableMap.Free();
+	FCurrentStack.Free();
+	FVariableMap.Free();
 	inherited;
 end;
 
 { Sets a new stack with extra care to free the old one }
-procedure TPN.SetStack(const stack: TPNStack);
+procedure TPN.SetStack(vStack: TPNStack);
 begin
-	if currentStack <> nil then
-		FreeAndNil(currentStack);
+	if FCurrentStack <> nil then
+		FreeAndNil(FCurrentStack);
 
-	currentStack := stack;
+	FCurrentStack := vStack;
 end;
 
 { Imports a string using TPNStack }
-procedure TPN.ImportString(const exported: String);
+procedure TPN.ImportString(const vExported: String);
 begin
-	SetStack(TPNStack.FromString(exported));
+	self.SetStack(TPNStack.FromString(vExported));
 end;
 
 { Exports a the TPNStack to a string }
 function TPN.ExportString(): String;
 begin
-	result := currentStack.ToString();
+	result := FCurrentStack.ToString();
 end;
 
 { Defines a new variable for the calculations }
-procedure TPN.DefineVariable(const variable: TVariable; const number: TNumber);
+procedure TPN.DefineVariable(const vVariable: TVariableName; vNumber: TNumber);
 begin
-	variableMap.Add(variable, number);
+	FVariableMap.Add(vVariable, vNumber);
 end;
 
 { Removes all defined variables for the calculation }
 procedure TPN.ClearVariables();
 begin
-	variableMap.Clear();
+	FVariableMap.Clear();
 end;
 
 { Parses a string via PNParser }
-procedure TPN.ParseString(const input: String);
+procedure TPN.ParseString(const vInput: String);
 begin
-	SetStack(Parse(input, operationsMap));
+	self.SetStack(Parse(vInput, PNOperationsMap));
 end;
 
 { Calculates the result using PNCalculator }
 function TPN.GetResult(): TNumber;
 begin
-	if currentStack = nil then
+	if FCurrentStack = nil then
 		raise Exception.Create('Nothing to calculate');
 
-	result := Calculate(currentStack, variableMap, operationsMap);
+	result := Calculate(FCurrentStack, FVariableMap, PNOperationsMap);
 end;
 
 end.

@@ -4,6 +4,18 @@ unit PNParser;
 
 {
 	Code responsible for transforming a string into a PN stack
+
+	body = statement
+	statement = operation | operand | block
+
+	operation = (prefix_op statement) | (statement infix_op statement)
+	block = '(' statement ')'
+	operand = number | variable
+
+	infix_op = <any of infix operators>
+	prefix_op = <any of prefix operators>
+	number = <any number>
+	variable = <alphanumeric variable>
 }
 
 interface
@@ -12,7 +24,7 @@ uses
 	Fgl, SysUtils,
 	PNTree, PNCore, PNStack, PNTypes;
 
-function Parse(const input: String; const operators: TOperationsMap): TPNStack;
+function Parse(const vInput: String; vOperators: TOperationsMap): TPNStack;
 
 implementation
 
@@ -20,144 +32,139 @@ type
 	TTokenList = specialize TFPGObjectList<TPNNode>;
 
 { Tokenize a string. Tokens still don't know what their meaning of life is }
-function Tokenize(context: String; const operators: TOperationsMap): TTokenList;
+function Tokenize(vContext: String; vOperators: TOperationsMap): TTokenList;
 var
-	list: TTokenList;
-
-	part: String;
-	op: TOperationInfo;
-
+	vPart: String;
+	vOp: TOperationInfo;
 begin
-	list := TTokenList.Create(False);
-	list.Capacity := Length(context);
+	result := TTokenList.Create(False);
+	result.Capacity := Length(vContext);
 
 	// add all operators to the arrays
-	for op in operators do begin
-		context := context.Replace(op.&operator, space + op.&operator + space, [rfReplaceAll]);
+	for vOp in vOperators do begin
+		vContext := vContext.Replace(vOp.OperatorName, cSpace + vOp.OperatorName + cSpace, [rfReplaceAll]);
 	end;
 
-	for part in context.Split(space, TStringSplitOptions.ExcludeEmpty) do begin;
+	for vPart in vContext.Split(cSpace, TStringSplitOptions.ExcludeEmpty) do begin;
 		// TODO: ExcludeEmpty not fully woring?
-		if part <> String.Empty then begin
-			if IsOperator(part, operators) then
-				list.Add(TPNNode.Create(MakeItem(TOperator(part))))
+		if vPart <> String.Empty then begin
+			if IsOperator(vPart, vOperators) then
+				result.Add(TPNNode.Create(MakeItem(TOperatorName(vPart))))
 			else
-				list.Add(TPNNode.Create(MakeItem(part)));
+				result.Add(TPNNode.Create(MakeItem(vPart)));
 		end;
 	end;
-
-	result := list;
 end;
 
 { Transforms prepared TTokenList into Polish notation }
-function TransformTokenList(const tokens: TTokenList; const operators: TOperationsMap): TPNNode;
+function TransformTokenList(vTokens: TTokenList; vOperators: TOperationsMap): TPNNode;
 
-	procedure AddNode(const node, lastOperation: TPNNode; const root: PPNNode); inline;
+	procedure AddNode(vNode, vLastOperation: TPNNode; vRoot: PPNNode);
 	begin
-		if lastOperation <> nil then begin
-			if (lastOperation.OperationType() = otInfix) and (lastOperation.right = nil) then
-				lastOperation.right := node
+		if vLastOperation <> nil then begin
+			if (vLastOperation.OperationType() = otInfix) and (vLastOperation.Right = nil) then
+				vLastOperation.Right := vNode
 			else
 				raise Exception.Create(
-					Format('Unexpected value %S (operator %S)', [GetItemValue(node.item), lastOperation.item.&operator])
+					Format('Unexpected value %S (operator %S)', [
+						GetItemValue(vNode.Item),
+						vLastOperation.Item.OperatorName
+					])
 				);
 		end
-		else if root^ = nil then
-			root^ := node
+		else if vRoot^ = nil then
+			vRoot^ := vNode
 		else
-			raise Exception.Create(Format('Unexpected value %S', [GetItemValue(node.item)]));
+			raise Exception.Create(Format('Unexpected value %S', [GetItemValue(vNode.Item)]));
 	end;
 
 	{ Recursively transform standard notation into a tree }
-	function MakeTree(var index: Word; inBraces: Boolean = False): TPNNode;
+	function MakeTree(var vIndex: Word; vInBraces: Boolean = False): TPNNode;
 	var
-		lastOperation: TPNNode;
-		currentRoot: TPNNode;
-		node: TPNNode;
-		tmp: TPNNode;
-
+		vLastOperation: TPNNode;
+		vCurrentRoot: TPNNode;
+		vNode: TPNNode;
+		vTmp: TPNNode;
 	begin
-		lastOperation := nil;
-		currentRoot := nil;
+		vLastOperation := nil;
+		vCurrentRoot := nil;
 
-		while index < tokens.Count do begin
-			node := tokens[index];
+		while vIndex < vTokens.Count do begin
+			vNode := vTokens[vIndex];
 
-			if node.item.itemType = itOperator then begin
-				node.operationInfo := GetOperationInfoByOperator(node.item.&operator, operators);
+			if vNode.Item.ItemType = itOperator then begin
+				vNode.OperationInfo := GetOperationInfoByOperator(vNode.Item.OperatorName, vOperators);
 
-				if node.OperationType() = otSyntax then begin
-					case node.operationInfo.syntax of
+				if vNode.OperationType() = otSyntax then begin
+					case vNode.OperationInfo.Syntax of
 						stGroupStart: begin
-							index += 1;
-							node := MakeTree(index, True);
-							AddNode(node, lastOperation, @currentRoot);
+							vIndex += 1;
+							vNode := MakeTree(vIndex, True);
+							AddNode(vNode, vLastOperation, @vCurrentRoot);
 						end;
 
 						stGroupEnd: begin
-							inBraces := not inBraces;
+							vInBraces := not vInBraces;
 							break;
 						end;
 					end;
 				end
 
 				else begin
-					while (lastOperation <> nil) and (lastOperation.OperationPriority() >= node.OperationPriority()) do
-						lastOperation := lastOperation.parent;
+					while (vLastOperation <> nil) and (vLastOperation.OperationPriority() >= vNode.OperationPriority()) do
+						vLastOperation := vLastOperation.Parent;
 
-					if lastOperation = nil then begin
-						node.left := currentRoot;
-						currentRoot := node;
+					if vLastOperation = nil then begin
+						vNode.Left := vCurrentRoot;
+						vCurrentRoot := vNode;
 					end
 
 					else begin
-						tmp := lastOperation.right;
-						lastOperation.right := node;
-						node.left := tmp;
+						vTmp := vLastOperation.Right;
+						vLastOperation.Right := vNode;
+						vNode.Left := vTmp;
 					end;
 
-					lastOperation := node;
+					vLastOperation := vNode;
 				end;
 			end
 
 			else
-				AddNode(node, lastOperation, @currentRoot);
+				AddNode(vNode, vLastOperation, @vCurrentRoot);
 
-			index += 1;
+			vIndex += 1;
 		end;
 
-		if inBraces then
+		if vInBraces then
 			raise Exception.Create('Unmatched braces');
 
-		result := currentRoot;
+		result := vCurrentRoot;
 	end;
 
 var
-	resultTree: TPNNode;
-	treeNode: TPNNode;
-	index: Word;
-
+	vIndex: Word;
 begin
-	index := 0;
-	result := MakeTree(index);
+	vIndex := 0;
+	result := MakeTree(vIndex);
 end;
 
 { Parses the entire calculation }
-function Parse(const input: String; const operators: TOperationsMap): TPNStack;
+function Parse(const vInput: String; vOperators: TOperationsMap): TPNStack;
 var
-	tokens: TTokenList;
-	node: TPNNode;
+	vTokens: TTokenList;
+	vNode: TPNNode;
 begin
-	tokens := Tokenize(input, operators);
-	node := TransformTokenList(tokens, operators);
+	vTokens := Tokenize(vInput, vOperators);
+	vNode := TransformTokenList(vTokens, vOperators);
 
 	result := TPNStack.Create;
-	while node <> nil do begin
-		result.Push(node.item);
-		node := node.NextInorder();
+	while vNode <> nil do begin
+		result.Push(vNode.Item);
+		vNode := vNode.NextInorder();
 	end;
 
-	tokens.Free();
+	vTokens.Free();
 end;
 
 end.
+

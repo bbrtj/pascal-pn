@@ -15,38 +15,38 @@ type
 	PPNNode = ^TPNNode;
 
 	TPNNode = class
-		private
-			FItem: TItem;
-			FOpInfo: TOperationInfo;
+	strict private
+		FItem: TItem;
+		FOpInfo: TOperationInfo;
 
-			FLeft: TPNNode;
-			FRight: TPNNode;
-			FParent: TPNNode;
+		FLeft: TPNNode;
+		FRight: TPNNode;
+		FParent: TPNNode;
 
-			procedure SetLeft(const node: TPNNode);
-			procedure SetRight(const node: TPNNode);
-		public
-			constructor Create(const item: TItem);
-			destructor Destroy; override;
+		procedure SetLeft(vNode: TPNNode);
+		procedure SetRight(vNode: TPNNode);
+	public
+		constructor Create(vItem: TItem);
+		destructor Destroy; override;
 
-			function OperationPriority(): Byte;
-			function OperationType(): TOperationType;
+		function OperationPriority(): Byte;
+		function OperationType(): TOperationType;
 
-			property item: TItem read FItem;
-			property left: TPNNode read FLeft write SetLeft;
-			property right: TPNNode read FRight write SetRight;
-			property parent: TPNNode read FParent write FParent;
-			property operationInfo: TOperationInfo read FOpInfo write FOpInfo;
+		function NextInorder(): TPNNode;
 
-			function NextInorder(): TPNNode;
+		property Item: TItem read FItem;
+		property Left: TPNNode read FLeft write SetLeft;
+		property Right: TPNNode read FRight write SetRight;
+		property Parent: TPNNode read FParent write FParent;
+		property OperationInfo: TOperationInfo read FOpInfo write FOpInfo;
 	end;
 
 implementation
 
 {}
-constructor TPNNode.Create(const item: TItem);
+constructor TPNNode.Create(vItem: TItem);
 begin
-	FItem := item;
+	FItem := vItem;
 	FLeft := nil;
 	FRight := nil;
 	FParent := nil;
@@ -61,56 +61,56 @@ begin
 end;
 
 { Set the left node (plus its parent) }
-procedure TPNNode.SetLeft(const node: TPNNode);
+procedure TPNNode.SetLeft(vNode: TPNNode);
 begin
 	if FLeft <> nil then
-		FLeft.parent := nil;
-	FLeft := node;
-	node.parent := self;
+		FLeft.Parent := nil;
+	FLeft := vNode;
+	vNode.Parent := self;
 end;
 
 { Set the right node (plus its parent) }
-procedure TPNNode.SetRight(const node: TPNNode);
+procedure TPNNode.SetRight(vNode: TPNNode);
 begin
 	if FRight <> nil then
-		FRight.parent := nil;
-	FRight := node;
-	node.parent := self;
+		FRight.Parent := nil;
+	FRight := vNode;
+	vNode.Parent := self;
 end;
 
 { Get the priority of an operation stored }
 function TPNNode.OperationPriority(): Byte;
 begin
-	result := FOpInfo.priority;
+	result := FOpInfo.Priority;
 end;
 
 { Get the type of an operation stored }
 function TPNNode.OperationType(): TOperationType;
 begin
-	result := FOpInfo.operationType;
+	result := FOpInfo.OperationType;
 end;
 
 
 { Traverse the tree Inorder }
 function TPNNode.NextInorder(): TPNNode;
 var
-	last: TPNNode;
-
+	vLast: TPNNode;
 begin
-	if self.left <> nil then
-		result := self.left
+	if self.Left <> nil then
+		result := self.Left
 	else begin
 		result := self;
-		last := result;
+		vLast := result;
 
-		while (result <> nil) and ((result.right = nil) or (result.right = last)) do begin
-			last := result;
-			result := result.parent;
+		while (result <> nil) and ((result.Right = nil) or (result.Right = vLast)) do begin
+			vLast := result;
+			result := result.Parent;
 		end;
 
 		if result <> nil then
-			result := result.right
+			result := result.Right;
 	end;
 end;
 
 end.
+

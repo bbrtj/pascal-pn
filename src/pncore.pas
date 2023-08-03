@@ -15,95 +15,121 @@ uses
 type
 	TSyntaxType = (stGroupStart, stGroupEnd);
 
-	TOperationHandler = function (const stack: TPNNumberStack): TNumber;
+	TOperationHandler = function (stack: TPNNumberStack): TNumber;
 	TOperationType = (otSyntax, otInfix);
 	TOperationInfo = record
-		&operator: TOperator;
-		handler: TOperationHandler;
-		priority: Byte;
-		operationType: TOperationType;
-		syntax: TSyntaxType;
+		OperatorName: TOperatorName;
+		Handler: TOperationHandler;
+		Priority: Byte;
+		OperationType: TOperationType;
+		Syntax: TSyntaxType;
 	end;
 
 	TOperationsMap = Array of TOperationInfo;
 
+var
+	PNOperationsMap: TOperationsMap;
 
-function GetOperationsMap(): TOperationsMap; inline;
-function IsOperator(const op: String; const map: TOperationsMap): Boolean; inline;
-function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap; const noSyntax: Boolean = False): TOperationInfo;
+function IsOperator(const vOp: String; vMap: TOperationsMap): Boolean;
+function GetOperationInfoByOperator(const vOp: TOperatorName; vMap: TOperationsMap; vNoSyntax: Boolean = False): TOperationInfo;
 
 implementation
 
 { Get the next argument from the stack, raise an exception if not possible }
-function NextArg(const stack: TPNNumberStack): TNumber; inline;
+function NextArg(vStack: TPNNumberStack): TNumber;
 begin
-	if stack.Empty() then
+	if vStack.Empty() then
 		raise Exception.Create('Invalid Polish notation: stack is empty, cannot get operand');
 
-	result := stack.Pop();
+	result := vStack.Pop();
 end;
 
 { Handler for + }
-function OpAddition(const stack: TPNNumberStack): TNumber;
+function OpAddition(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result += NextArg(stack);
+	result := NextArg(vStack);
+	result += NextArg(vStack);
 end;
 
 { Handler for - }
-function OpSubstraction(const stack: TPNNumberStack): TNumber;
+function OpSubstraction(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result -= NextArg(stack);
+	result := NextArg(vStack);
+	result -= NextArg(vStack);
 end;
 
 { Handler for * }
-function OpMultiplication(const stack: TPNNumberStack): TNumber;
+function OpMultiplication(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result *= NextArg(stack);
+	result := NextArg(vStack);
+	result *= NextArg(vStack);
 end;
 
 { Handler for / }
-function OpDivision(const stack: TPNNumberStack): TNumber;
+function OpDivision(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result /= NextArg(stack);
+	result := NextArg(vStack);
+	result /= NextArg(vStack);
 end;
 
 { Handler for ^ }
-function OpPower(const stack: TPNNumberStack): TNumber;
+function OpPower(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result := result ** NextArg(stack);
+	result := NextArg(vStack);
+	result := result ** NextArg(vStack);
 end;
 
 { Handler for % }
-function OpModulo(const stack: TPNNumberStack): TNumber;
+function OpModulo(vStack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(stack);
-	result := FMod(result, NextArg(stack));
+	result := NextArg(vStack);
+	result := FMod(result, NextArg(vStack));
 end;
 
 { Creates a new TOperationInfo }
-function MakeInfo(const &operator: TOperator; const handler: TOperationHandler; const priority: Byte): TOperationInfo;
+function MakeInfo(vOperator: TOperatorName; vHandler: TOperationHandler; vPriority: Byte): TOperationInfo;
 begin
-	result.&operator := &operator;
-	result.handler := handler;
-	result.priority := priority;
-	result.operationType := otInfix;
+	result.OperatorName := vOperator;
+	result.Handler := vHandler;
+	result.Priority := vPriority;
+	result.OperationType := otInfix;
 end;
 
-function MakeSyntax(const symbol: TOperator; const value: TSyntaxType): TOperationInfo;
+function MakeSyntax(const vSymbol: TOperatorName; vValue: TSyntaxType): TOperationInfo;
 begin
-	result.operationType := otSyntax;
-	result.&operator := symbol;
-	result.syntax := value;
+	result.OperationType := otSyntax;
+	result.OperatorName := vSymbol;
+	result.Syntax := vValue;
 end;
 
-function GetOperationsMap(): TOperationsMap;
+function IsOperator(const vOp: String; vMap: TOperationsMap): Boolean;
+var
+	vInfo: TOperationInfo;
 begin
-	result := TOperationsMap.Create(
+	result := False;
+
+	for vInfo in vMap do begin
+		if vInfo.OperatorName = vOp then begin
+			result := True;
+			break;
+		end;
+	end;
+end;
+
+function GetOperationInfoByOperator(const vOp: TOperatorName; vMap: TOperationsMap; vNoSyntax: Boolean = False): TOperationInfo;
+var
+	vInfo: TOperationInfo;
+begin
+	for vInfo in vMap do begin
+		if (vInfo.OperatorName = vOp) and ((not vNoSyntax) or (vInfo.OperationType <> otSyntax)) then
+			Exit(vInfo);
+	end;
+
+	raise Exception.Create('Invalid operator ' + vOp);
+end;
+
+initialization
+	PNOperationsMap := [
 		MakeInfo('+', @OpAddition, 1),
 		MakeInfo('-', @OpSubstraction, 1),
 		MakeInfo('*', @OpMultiplication, 2),
@@ -112,33 +138,7 @@ begin
 		MakeInfo('^', @OpPower, 3),
 		MakeSyntax('(', stGroupStart),
 		MakeSyntax(')', stGroupEnd)
-	);
-end;
-
-function IsOperator(const op: String; const map: TOperationsMap): Boolean;
-var
-	info: TOperationInfo;
-
-begin
-	for info in map do begin
-		if info.&operator = op then
-			Exit(True);
-	end;
-
-	result := False;
-end;
-
-function GetOperationInfoByOperator(const op: TOperator; const map: TOperationsMap; const noSyntax: Boolean = False): TOperationInfo;
-var
-	info: TOperationInfo;
-
-begin
-	for info in map do begin
-		if (info.&operator = op) and ((not noSyntax) or (info.operationType <> otSyntax)) then
-			Exit(info);
-	end;
-
-	raise Exception.Create('Invalid operator ' + op);
-end;
+	];
 
 end.
+

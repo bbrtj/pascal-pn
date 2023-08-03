@@ -12,72 +12,73 @@ uses
 	Fgl, SysUtils;
 
 const
-	space = ' ';
+	cSpace = ' ';
 
 type
 	TNumber = Double;
-	TVariable = String[10];
-	TOperator = String[3];
+	TVariableName = String[20];
+	TOperatorName = String[10];
 
-	TVariableMap = specialize TFPGMap<TVariable, TNumber>;
+	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
 
 	TItemType = (itNumber, itVariable, itOperator);
 	TItem = record
-		case itemType: TItemType of
-			itNumber: (number: TNumber);
-			itVariable: (variable: TVariable);
-			itOperator: (&operator: TOperator);
+		case ItemType: TItemType of
+			itNumber: (Number: TNumber);
+			itVariable: (VariableName: TVariableName);
+			itOperator: (OperatorName: TOperatorName);
 	end;
 
-function MakeItem(const value: TNumber): TItem; inline;
-function MakeItem(const value: String): TItem; inline;
-function MakeItem(const value: TVariable): TItem; inline;
-function MakeItem(const value: TOperator): TItem; inline;
-function GetItemValue(const item: TItem): String; inline;
+function MakeItem(vValue: TNumber): TItem;
+function MakeItem(const vValue: String): TItem;
+function MakeItem(const vValue: TVariableName): TItem;
+function MakeItem(const vValue: TOperatorName): TItem;
+function GetItemValue(vItem: TItem): String;
 
 implementation
 
 { Creates TItem from TNumber }
-function MakeItem(const value: TNumber): TItem;
+function MakeItem(vValue: TNumber): TItem;
 begin
-	result.itemType := itNumber;
-	result.number := value;
+	result.ItemType := itNumber;
+	result.Number := vValue;
 end;
 
-{ Creates TItem from TVariable }
-function MakeItem(const value: TVariable): TItem;
+{ Creates TItem from TVariableName }
+function MakeItem(const vValue: TVariableName): TItem;
 begin
-	result.itemType := itVariable;
-	result.variable := value;
+	result.ItemType := itVariable;
+	result.VariableName := vValue;
 end;
 
 { Creates TItem from a string (guess) }
-function MakeItem(const value: String): TItem;
+function MakeItem(const vValue: String): TItem;
 var
-	numval: TNumber;
+	vNumericValue: TNumber;
 begin
-	if TryStrToFloat(value, numval) then
-		result := MakeItem(numval)
-	else if IsValidIdent(value) then
-		result := MakeItem(TVariable(value))
+	if TryStrToFloat(vValue, vNumericValue) then
+		result := MakeItem(vNumericValue)
+	else if IsValidIdent(vValue) then
+		result := MakeItem(TVariableName(vValue))
 	else
-		raise Exception.Create('Invalid token ' + value);
+		raise Exception.Create('Invalid token ' + vValue);
 end;
 
-{ Creates TItem from TOperator }
-function MakeItem(const value: TOperator): TItem;
+{ Creates TItem from TOperatorName }
+function MakeItem(const vValue: TOperatorName): TItem;
 begin
-	result.itemType := itOperator;
-	result.&operator := value;
+	result.ItemType := itOperator;
+	result.OperatorName := vValue;
 end;
 
-function GetItemValue(const item: TItem): String;
+function GetItemValue(vItem: TItem): String;
 begin
-	case item.itemType of
-		itNumber: result := String(item.number);
-		itVariable: result := item.variable;
-		itOperator: result := item.&operator;
+	case vItem.ItemType of
+		itNumber: result := String(vItem.Number);
+		itVariable: result := vItem.VariableName;
+		itOperator: result := vItem.OperatorName;
 	end;
 end;
 
 end.
+

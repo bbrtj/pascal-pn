@@ -15,65 +15,64 @@ uses
 type
 
 	TPNBaseStack = class abstract(TStack)
-		public
-			destructor Destroy; override;
+	public
+		destructor Destroy; override;
 
-			function Empty(): Boolean;
-			procedure Clear();
+		function Empty(): Boolean;
+		procedure Clear();
 	end;
 
 	TPNStack = class(TPNBaseStack)
-		public
-			const
-				separatorChar = '#';
-				operatorPrefixChar = 'o';
-				variablePrefixChar = 'v';
+	public
+		const
+			cSeparatorChar = '#';
+			cOperatorPrefixChar = 'o';
+			cVariablePrefixChar = 'v';
 
-			procedure Push(const item: TItem);
-			function Pop(): TItem;
-			function Top(): TItem;
+		procedure Push(vItem: TItem);
+		function Pop(): TItem;
+		function Top(): TItem;
 
-			function ToString(): String; override;
-			class function FromString(const input: String): TPNStack;
+		function ToString(): String; override;
+		class function FromString(const vInput: String): TPNStack;
 	end;
 
 	TPNNumberStack = class(TPNBaseStack)
-		public
-			procedure Push(const item: TNumber);
-			function Pop(): TNumber;
-			function Top(): TNumber;
+	public
+		procedure Push(vItem: TNumber);
+		function Pop(): TNumber;
+		function Top(): TNumber;
 	end;
 
 implementation
 
-{}
 destructor TPNBaseStack.Destroy;
 begin
-	Clear();
+	self.Clear();
 	inherited;
 end;
 
 { Checks whether the stack is empty }
 function TPNBaseStack.Empty(): Boolean;
 begin
-	result := not AtLeast(1);
+	result := not self.AtLeast(1);
 end;
 
 { Clear the stack }
 procedure TPNBaseStack.Clear();
 begin
-	while not Empty() do
-		Pop();
+	while not self.Empty() do
+		self.Pop();
 end;
 
 { Pushes on top of the stack }
-procedure TPNStack.Push(const item: TItem);
+procedure TPNStack.Push(vItem: TItem);
 var
-	res: ^TItem;
+	vRes: ^TItem;
 begin
-	New(res);
-	res^ := item;
-	inherited Push(res);
+	New(vRes);
+	vRes^ := vItem;
+	inherited Push(vRes);
 end;
 
 { Pops the top of the stack }
@@ -89,96 +88,96 @@ end;
 { Returns the top of the stack without poping it }
 function TPNStack.Top(): TItem;
 var
-	res: ^TItem;
+	vRes: ^TItem;
 begin
-	res := Peek();
-	result := TItem(res^);
+	vRes := self.Peek();
+	result := TItem(vRes^);
 end;
 
 { Exports to string, destroys the stack in the process }
 function TPNStack.ToString(): String;
 var
-	item: TItem;
-	itemString: String;
+	vItem: TItem;
+	vItemString: String;
 
 begin
 	result := '';
-	while not Empty() do begin
-		item := Pop();
+	while not self.Empty() do begin
+		vItem := self.Pop();
 
-		case item.itemtype of
-			itNumber: itemString := FloatToStr(item.number);
-			itVariable: itemString := variablePrefixChar + item.variable;
-			itOperator: itemString := operatorPrefixChar + item.&operator;
+		case vItem.ItemType of
+			itNumber: vItemString := FloatToStr(vItem.Number);
+			itVariable: vItemString := cVariablePrefixChar + vItem.VariableName;
+			itOperator: vItemString := cOperatorPrefixChar + vItem.OperatorName;
 		end;
 
-		result := itemString + result;
+		result := vItemString + result;
 
-		if not Empty() then
-			result := separatorChar + result;
+		if not self.Empty() then
+			result := cSeparatorChar + result;
 	end;
 end;
 
 { Imports from string, allocates a new object }
-class function TPNStack.FromString(const input: String): TPNStack;
+class function TPNStack.FromString(const vInput: String): TPNStack;
 var
-	stack: TPNStack;
-
-	split: Array of String;
-	part: String;
+	vStack: TPNStack;
+	vSplit: Array of String;
+	vPart: String;
 
 	function SkipFirstChar(): String;
 	begin
-		result := Copy(part, 2, Length(part));
+		result := Copy(vPart, 2, Length(vPart));
 	end;
 
 begin
-	stack := TPNStack.Create;
-	split := SplitString(input, separatorChar);
+	vStack := TPNStack.Create;
+	vSplit := SplitString(vInput, cSeparatorChar);
 
 
-	for part in split do begin
+	for vPart in vSplit do begin
 
-		if StartsStr(variablePrefixChar, part) then
-			stack.Push(MakeItem(TVariable(SkipFirstChar())))
+		if StartsStr(cVariablePrefixChar, vPart) then
+			vStack.Push(MakeItem(TVariableName(SkipFirstChar())))
 
-		else if StartsStr(operatorPrefixChar, part) then
-			stack.Push(MakeItem(TOperator(SkipFirstChar())))
+		else if StartsStr(cOperatorPrefixChar, vPart) then
+			vStack.Push(MakeItem(TOperatorName(SkipFirstChar())))
 
 		else
-			stack.Push(MakeItem(StrToFloat(part)));
+			vStack.Push(MakeItem(StrToFloat(vPart)));
 	end;
 
-	result := stack;
+	result := vStack;
 end;
 
 { Pushes on top of the stack }
-procedure TPNNumberStack.Push(const item: TNumber);
+procedure TPNNumberStack.Push(vItem: TNumber);
 var
-	res: ^TNumber;
+	vRes: ^TNumber;
 begin
-	New(res);
-	res^ := item;
-	inherited Push(res);
+	New(vRes);
+	vRes^ := vItem;
+	inherited Push(vRes);
 end;
 
 { Pops the top of the stack }
 function TPNNumberStack.Pop(): TNumber;
 var
-	res: ^TNumber;
+	vRes: ^TNumber;
 begin
-	res := inherited Pop();
-	result := TNumber(res^);
-	Dispose(res);
+	vRes := inherited Pop();
+	result := TNumber(vRes^);
+	Dispose(vRes);
 end;
 
 { Returns the top of the stack without poping it }
 function TPNNumberStack.Top(): TNumber;
 var
-	res: ^TNumber;
+	vRes: ^TNumber;
 begin
-	res := Peek();
-	result := TNumber(res^);
+	vRes := self.Peek();
+	result := TNumber(vRes^);
 end;
 
 end.
+

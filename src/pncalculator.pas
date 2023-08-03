@@ -12,62 +12,55 @@ uses
 	SysUtils,
 	PNCore, PNStack, PNTypes;
 
-function Calculate(
-	const mainStack: TPNStack;
-	const variables: TVariableMap;
-	const operationsMap: TOperationsMap
-): TNumber;
+function Calculate(vMainStack: TPNStack; vVariables: TVariableMap; vOperationsMap: TOperationsMap): TNumber;
 
 implementation
 
+{ Tries to fetch a variable value from TVariableMap }
+function ResolveVariable(vItem: TItem; vVariables: TVariableMap): TNumber;
+begin
+	if not vVariables.TryGetData(vItem.VariableName, result) then
+		raise Exception.Create('Variable ' + vItem.VariableName + ' was not defined');
+end;
+
+
 { Calculates a result from a Polish notation stack }
-function Calculate(
-	const mainStack: TPNStack;
-	const variables: TVariableMap;
-	const operationsMap: TOperationsMap
-): TNumber;
-
-	{ Tries to fetch a variable value from TVariableMap }
-	function ResolveVariable(const item: TItem; const variables: TVariableMap): TNumber; inline;
-	var
-		varValue: TNumber;
-
-	begin
-		if not variables.TryGetData(item.variable, varValue) then
-			raise Exception.Create('Variable ' + item.variable + ' was not defined');
-
-		result := varValue;
-	end;
-
+function Calculate(vMainStack: TPNStack; vVariables: TVariableMap; vOperationsMap: TOperationsMap): TNumber;
 var
-	localStack: TPNNumberStack;
-	item: TItem;
+	vLocalStack: TPNNumberStack;
+	vItem: TItem;
 
 begin
-	localStack := TPNNumberStack.Create;
+	vLocalStack := TPNNumberStack.Create;
 
 	// main calculation loop
-	while not mainStack.Empty() do begin
-		item := mainStack.Pop();
+	while not vMainStack.Empty() do begin
+		vItem := vMainStack.Pop();
 
-		if item.itemType = itOperator then
-			localStack.Push(GetOperationInfoByOperator(item.&operator, operationsMap, True).handler(localStack))
+		if vItem.ItemType = itOperator then
+			vLocalStack.Push(
+				GetOperationInfoByOperator(vItem.OperatorName, vOperationsMap, True).Handler(
+					vLocalStack
+				)
+			)
 
-		else if item.itemType = itVariable then
-			localStack.Push(ResolveVariable(item, variables))
+		else if vItem.ItemType = itVariable then
+			vLocalStack.Push(ResolveVariable(vItem, vVariables))
 
 		else
-			localStack.Push(item.number);
+			vLocalStack.Push(vItem.Number);
 	end;
 
-	result := localStack.Pop();
+	result := vLocalStack.Pop();
 
-	if not localStack.Empty then
+	if not vLocalStack.Empty then
 		raise Exception.Create('Invalid Polish notation');
-	localStack.Free();
+
+	vLocalStack.Free();
 
 	// any further recalculations will return the value again
-	mainStack.Push(MakeItem(result));
+	vMainStack.Push(MakeItem(result));
 end;
 
 end.
+

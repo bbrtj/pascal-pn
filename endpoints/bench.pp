@@ -10,7 +10,6 @@ var
 	vVar: Int64;
 	vTotal: Double;
 
-
 begin
 	vTotal := 0;
 	for vVar := 1 to 20 * 30 * 20 do begin
