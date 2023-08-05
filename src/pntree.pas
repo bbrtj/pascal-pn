@@ -65,7 +65,7 @@ end;
 { Set the left node (plus its parent) }
 procedure TPNNode.SetLeft(vNode: TPNNode);
 begin
-	if FLeft <> nil then
+	if (FLeft <> nil) and (FLeft.Parent = self) then
 		FLeft.Parent := nil;
 
 	FLeft := vNode;
@@ -76,7 +76,7 @@ end;
 { Set the right node (plus its parent) }
 procedure TPNNode.SetRight(vNode: TPNNode);
 begin
-	if FRight <> nil then
+	if (FRight <> nil) and (FRight.Parent = self) then
 		FRight.Parent := nil;
 
 	FRight := vNode;

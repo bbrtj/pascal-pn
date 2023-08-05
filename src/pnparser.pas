@@ -6,7 +6,7 @@ unit PNParser;
 	Code responsible for transforming a string into a PN stack
 
 	body = statement
-	statement = block | operand | operation
+	statement = operation | block | operand
 
 	operation = (prefix_op statement) | (statement infix_op statement)
 	block = left_brace statement right_brace
@@ -65,6 +65,7 @@ begin
 		vOpInfo := TOperationInfo.Find(vOp, vOC);
 		if vOpInfo <> nil then begin
 			result := TPNNode.Create(MakeItem(vOpInfo));
+			vAt := vAt + vLen;
 			break;
 		end;
 	end;
@@ -126,7 +127,7 @@ begin
 		inc(vAt);
 	until not (IsWithinInput(vInput, vAt) and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
 
-	vNumberStringified := copy(vInput, vStart, vAt - 1);
+	vNumberStringified := copy(vInput, vStart, vAt - vStart);
 	result := TPNNode.Create(MakeItem(vNumberStringified));
 
 	SkipWhiteSpace(vInput, vAt);
@@ -147,7 +148,7 @@ begin
 		inc(vAt);
 	until not (IsWithinInput(vInput, vAt) and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
 
-	vVarName := copy(vInput, vStart, vAt - 1);
+	vVarName := copy(vInput, vStart, vAt - vStart);
 	result := TPNNode.Create(MakeItem(vVarName));
 
 	SkipWhiteSpace(vInput, vAt);
@@ -156,7 +157,6 @@ end;
 function ParseBlock(const vInput: String; var vAt: UInt32): TPNNode;
 var
 	vAtBacktrack: UInt32;
-
 begin
 	vAtBacktrack := vAt;
 
@@ -190,7 +190,7 @@ var
 	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean;
 	begin
 		result := vCompare.IsOperation and (not vCompare.Grouped)
-			and (vCompare.OperationPriority < vAgainst.OperationPriority);
+			and (vCompare.OperationPriority <= vAgainst.OperationPriority);
 	end;
 
 begin
@@ -203,16 +203,20 @@ begin
 		vOp := vPartialResult;
 		vPartialResult := ParseStatement(vInput, vAt);
 		if Success then begin
+			vOp.Left := vPartialResult;
+
 			// check if vPartialResult is an operator (for precedence)
+			// (must descent to find leftmost operator)
 			if IsLowerPriority(vPartialResult, vOp) then begin
+				while IsLowerPriority(vPartialResult.Left, vOp) do
+					vPartialResult := vPartialResult.Left;
+				result := vOp.Left;
 				vOp.Left := vPartialResult.Left;
-				result := vPartialResult;
-				vPartialResult := vOp;
+				result.Left := vOp;
 			end
 			else
 				result := vOp;
 
-			result.Left := vPartialResult;
 			exit(result);
 		end;
 	end;
@@ -228,18 +232,22 @@ begin
 			vOp := vPartialResult;
 			vPartialResult := ParseStatement(vInput, vAt);
 			if Success then begin
-				result := vOp;
-
 				// No need to check for precedence on left argument, as we
-				// parse left to right
-				result.Left := vFirst;
-				result.Right := vPartialResult;
+				// parse left to right (sfNotOperation on first)
+				vOp.Left := vFirst;
+				vOp.Right := vPartialResult;
 
 				// check if vPartialResult is an operator (for precedence)
-				if IsLowerPriority(vPartialResult, result) then begin
-					result.Right := vPartialResult.Left;
-					vPartialResult.Left := result;
-				end;
+				// (must descent to find leftmost operator)
+				if IsLowerPriority(vPartialResult, vOp) then begin
+					while IsLowerPriority(vPartialResult.Left, vOp) do
+						vPartialResult := vPartialResult.Left;
+					result := vOp.Right;
+					vOp.Right := vPartialResult.Left;
+					vPartialResult.Left := vOp;
+				end
+				else
+					result := vOp;
 
 				exit(result);
 			end;
@@ -296,21 +304,23 @@ var
 	end;
 
 begin
+	vPartialResult := nil;
 	vAtBacktrack := vAt;
 	vLength := Length(vInput);
 
-	vPartialResult := ParseBlock(vInput, vAt);
-	if Success then exit(vPartialResult);
-
-	vPartialResult.Free;
-	vPartialResult := ParseOperand(vInput, vAt);
-	if Success then exit(vPartialResult);
-
 	if not (sfNotOperation in vFlags) then begin
-		vPartialResult.Free;
 		vPartialResult := ParseOperation(vInput, vAt);
 		if Success then exit(vPartialResult);
 	end;
+
+	vPartialResult.Free;
+	vPartialResult := ParseBlock(vInput, vAt);
+	if Success then exit(vPartialResult);
+
+	// operand last, as it is a part of an operation
+	vPartialResult.Free;
+	vPartialResult := ParseOperand(vInput, vAt);
+	if Success then exit(vPartialResult);
 
 	vPartialResult.Free;
 	result := nil;

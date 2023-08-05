@@ -6,6 +6,7 @@ O_LEVEL ?= 1
 TEST_RUNNER ?= prove
 TEST_VERBOSE ?= 0
 TEST_FLAG ?= $$(if [ $(TEST_VERBOSE) == 1 ]; then echo "--verbose"; fi)
+DEBUG_EXPR ?= -p "2+2"
 
 build: prepare
 	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) -opncli endpoints/cli.pp
@@ -27,7 +28,7 @@ bench: build-bench
 
 debug: prepare
 	$(FPC) -g -gl $(FPC_FLAGS) -odebcli endpoints/cli.pp
-	gdb -ex "run -p 2+2" $(BUILD_DIR)/debcli
+	gdb -ex 'run $(DEBUG_EXPR)' $(BUILD_DIR)/debcli
 
 prepare:
 	mkdir -p $(BUILD_DIR)

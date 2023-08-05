@@ -80,7 +80,7 @@ begin
 		otMinus: result := OpMinus(vStack);
 		otAddition: result := OpAddition(vStack);
 		otSubtraction: result := OpSubtraction(vStack);
-		otMultiplication: result := OpMinus(vStack);
+		otMultiplication: result := OpMultiplication(vStack);
 		otDivision: result := OpDivision(vStack);
 		otPower: result := OpPower(vStack);
 		otModulo: result := OpModulo(vStack);

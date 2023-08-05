@@ -19,7 +19,7 @@ subtest 'valid strings' => sub {
 		'1.001250142E-299',
 		'vvariable',
 		'vo',
-		'ov#vo#vo',
+		'o**#vo#vo',
 		'o+#2#2',
 		'o+#2.01#2.001',
 		'o*#va#vb#o-#3',
@@ -44,3 +44,4 @@ subtest 'invalid strings' => sub {
 };
 
 done_testing;
+

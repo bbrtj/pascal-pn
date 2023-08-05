@@ -142,8 +142,8 @@ var
 begin
 	result := 0;
 	for vInfo in SList do begin
-		if (vInfo.OperationCategory = vOC) and (vInfo.Priority > result) then
-			result := vInfo.Priority;
+		if (vInfo.OperationCategory = vOC) and (length(vInfo.FOperatorName) > result) then
+			result := length(vInfo.FOperatorName);
 	end;
 end;
 
