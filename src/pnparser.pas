@@ -34,27 +34,32 @@ type
 	TStatementFlag = (sfFull, sfNotOperation);
 	TStatementFlags = set of TStatementFlag;
 
-function ParseStatement(const vInput: String; var vAt: UInt32; vFlags: TStatementFlags = []): TPNNode;
+var
+	vInput: String;
+	vInputLength: UInt32;
+	vAt: UInt32;
+
+function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 forward;
 
-function IsWithinInput(const vInput: String; var vAt: UInt32): Boolean;
+function IsWithinInput(): Boolean;
 begin
-	result := vAt <= length(vInput);
+	result := vAt <= vInputLength;
 end;
 
-procedure SkipWhiteSpace(const vInput: String; var vAt: UInt32);
+procedure SkipWhiteSpace();
 begin
-	while IsWithinInput(vInput, vAt) and IsWhiteSpace(vInput[vAt]) do
+	while IsWithinInput() and IsWhiteSpace(vInput[vAt]) do
 		inc(vAt);
 end;
 
-function ParseOp(const vInput: String; var vAt: UInt32; vOC: TOperationCategory): TPNNode;
+function ParseOp(vOC: TOperationCategory): TPNNode;
 var
 	vLen, vLongest: UInt32;
 	vOp: TOperatorName;
 	vOpInfo: TOperationInfo;
 begin
-	vLen := length(vInput) - vAt + 1;
+	vLen := vInputLength - vAt + 1;
 	vLongest := TOperationInfo.Longest(vOC);
 	if vLen < vLongest then
 		vLongest := vLen;
@@ -71,51 +76,51 @@ begin
 	end;
 end;
 
-function ParsePrefixOp(const vInput: String; var vAt: UInt32): TPNNode;
+function ParsePrefixOp(): TPNNode;
 begin
 	// only skip whitespace at the front
-	SkipWhiteSpace(vInput, vAt);
+	SkipWhiteSpace();
 
-	result := ParseOp(vInput, vAt, ocPrefix);
+	result := ParseOp(ocPrefix);
 end;
 
-function ParseInfixOp(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseInfixOp(): TPNNode;
 begin
 	// no need to skip whitespace in infix ops, as they must be surrounded by
 	// tokens which strip whitespace themselves
-	result := ParseOp(vInput, vAt, ocInfix);
+	result := ParseOp(ocInfix);
 end;
 
-function ParseOpeningBrace(const vInput: String; var vAt: UInt32): Boolean;
+function ParseOpeningBrace(): Boolean;
 begin
-	SkipWhiteSpace(vInput, vAt);
-	result := IsWithinInput(vInput, vAt) and (vInput[vAt] = '(');
+	SkipWhiteSpace();
+	result := IsWithinInput() and (vInput[vAt] = '(');
 	if result then begin
 		inc(vAt);
-		SkipWhiteSpace(vInput, vAt);
+		SkipWhiteSpace();
 	end;
 end;
 
-function ParseClosingBrace(const vInput: String; var vAt: UInt32): Boolean;
+function ParseClosingBrace(): Boolean;
 begin
-	SkipWhiteSpace(vInput, vAt);
-	result := IsWithinInput(vInput, vAt) and (vInput[vAt] = ')');
+	SkipWhiteSpace();
+	result := IsWithinInput() and (vInput[vAt] = ')');
 	if result then begin
 		inc(vAt);
-		SkipWhiteSpace(vInput, vAt);
+		SkipWhiteSpace();
 	end;
 end;
 
-function ParseNumber(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseNumber(): TPNNode;
 var
 	vStart: UInt32;
 	vHadPoint: Boolean;
 	vNumberStringified: String;
 begin
-	SkipWhiteSpace(vInput, vAt);
+	SkipWhiteSpace();
 
 	vStart := vAt;
-	if not (IsWithinInput(vInput, vAt) and IsDigit(vInput[vAt])) then
+	if not (IsWithinInput() and IsDigit(vInput[vAt])) then
 		exit(nil);
 
 	vHadPoint := False;
@@ -125,44 +130,44 @@ begin
 			vHadPoint := True;
 		end;
 		inc(vAt);
-	until not (IsWithinInput(vInput, vAt) and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
+	until not (IsWithinInput() and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
 
 	vNumberStringified := copy(vInput, vStart, vAt - vStart);
 	result := TPNNode.Create(MakeItem(vNumberStringified));
 
-	SkipWhiteSpace(vInput, vAt);
+	SkipWhiteSpace();
 end;
 
-function ParseVariableName(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseVariableName(): TPNNode;
 var
 	vStart: UInt32;
 	vVarName: TVariableName;
 begin
-	SkipWhiteSpace(vInput, vAt);
+	SkipWhiteSpace();
 
 	vStart := vAt;
-	if not (IsWithinInput(vInput, vAt) and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
+	if not (IsWithinInput() and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
 		exit(nil);
 
 	repeat
 		inc(vAt);
-	until not (IsWithinInput(vInput, vAt) and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
+	until not (IsWithinInput() and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
 
 	vVarName := copy(vInput, vStart, vAt - vStart);
 	result := TPNNode.Create(MakeItem(vVarName));
 
-	SkipWhiteSpace(vInput, vAt);
+	SkipWhiteSpace();
 end;
 
-function ParseBlock(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseBlock(): TPNNode;
 var
 	vAtBacktrack: UInt32;
 begin
 	vAtBacktrack := vAt;
 
-	if ParseOpeningBrace(vInput, vAt) then begin
-		result := ParseStatement(vInput, vAt);
-		if (result <> nil) and ParseClosingBrace(vInput, vAt) then begin
+	if ParseOpeningBrace() then begin
+		result := ParseStatement();
+		if (result <> nil) and ParseClosingBrace() then begin
 			// mark result with higher precedendce as it is in block
 			result.Grouped := True;
 			exit(result);
@@ -173,7 +178,7 @@ begin
 	result := nil;
 end;
 
-function ParseOperation(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseOperation(): TPNNode;
 var
 	vPartialResult, vOp, vFirst: TPNNode;
 	vAtBacktrack: UInt32;
@@ -198,10 +203,10 @@ begin
 	vFirst := nil;
 	vAtBacktrack := vAt;
 
-	vPartialResult := ParsePrefixOp(vInput, vAt);
+	vPartialResult := ParsePrefixOp();
 	if Success then begin
 		vOp := vPartialResult;
-		vPartialResult := ParseStatement(vInput, vAt);
+		vPartialResult := ParseStatement();
 		if Success then begin
 			vOp.Left := vPartialResult;
 
@@ -224,13 +229,13 @@ begin
 	vOp.Free;
 	vPartialResult.Free;
 
-	vPartialResult := ParseStatement(vInput, vAt, [sfNotOperation]);
+	vPartialResult := ParseStatement([sfNotOperation]);
 	if Success then begin
 		vFirst := vPartialResult;
-		vPartialResult := ParseInfixOp(vInput, vAt);
+		vPartialResult := ParseInfixOp();
 		if Success then begin
 			vOp := vPartialResult;
-			vPartialResult := ParseStatement(vInput, vAt);
+			vPartialResult := ParseStatement();
 			if Success then begin
 				// No need to check for precedence on left argument, as we
 				// parse left to right (sfNotOperation on first)
@@ -260,7 +265,7 @@ begin
 	result := nil;
 end;
 
-function ParseOperand(const vInput: String; var vAt: UInt32): TPNNode;
+function ParseOperand(): TPNNode;
 var
 	vPartialResult: TPNNode;
 	vAtBacktrack: UInt32;
@@ -277,26 +282,25 @@ var
 begin
 	vAtBacktrack := vAt;
 
-	vPartialResult := ParseNumber(vInput, vAt);
+	vPartialResult := ParseNumber();
 	if Success then exit(vPartialResult);
 
 	vPartialResult.Free;
-	vPartialResult := ParseVariableName(vInput, vAt);
+	vPartialResult := ParseVariableName();
 	if Success then exit(vPartialResult);
 
 	vPartialResult.Free;
 	result := nil;
 end;
 
-function ParseStatement(const vInput: String; var vAt: UInt32; vFlags: TStatementFlags = []): TPNNode;
+function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 var
 	vPartialResult: TPNNode;
 	vAtBacktrack: UInt32;
-	vLength: UInt32;
 
 	function Success(): Boolean;
 	begin
-		result := (vPartialResult <> nil) and ((not (sfFull in vFlags)) or (vAt > vLength));
+		result := (vPartialResult <> nil) and ((not (sfFull in vFlags)) or (vAt > vInputLength));
 
 		// backtrack
 		if not result then
@@ -306,32 +310,31 @@ var
 begin
 	vPartialResult := nil;
 	vAtBacktrack := vAt;
-	vLength := Length(vInput);
 
 	if not (sfNotOperation in vFlags) then begin
-		vPartialResult := ParseOperation(vInput, vAt);
+		vPartialResult := ParseOperation();
 		if Success then exit(vPartialResult);
 	end;
 
 	vPartialResult.Free;
-	vPartialResult := ParseBlock(vInput, vAt);
+	vPartialResult := ParseBlock();
 	if Success then exit(vPartialResult);
 
 	// operand last, as it is a part of an operation
 	vPartialResult.Free;
-	vPartialResult := ParseOperand(vInput, vAt);
+	vPartialResult := ParseOperand();
 	if Success then exit(vPartialResult);
 
 	vPartialResult.Free;
 	result := nil;
 end;
 
-function ParseBody(const vInput: String): TPNNode;
-var
-	vAt: UInt32;
+function ParseBody(const vParseInput: String): TPNNode;
 begin
+	vInput := vParseInput;
+	vInputLength := length(vInput);
 	vAt := 1;
-	result := ParseStatement(vInput, vAt, [sfFull]);
+	result := ParseStatement([sfFull]);
 
 	if result = nil then
 		raise Exception.Create('Couldn''t parse the calculation');
