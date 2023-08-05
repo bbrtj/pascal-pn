@@ -10,7 +10,7 @@ interface
 
 uses
 	SysUtils,
-	PNCalculator, PNParser, PNCore, PNStack, PNTypes;
+	PNCalculator, PNParser, PNStack, PNTypes;
 
 type
 
@@ -86,7 +86,7 @@ end;
 { Parses a string via PNParser }
 procedure TPN.ParseString(const vInput: String);
 begin
-	self.SetStack(Parse(vInput, PNOperationsMap));
+	self.SetStack(Parse(vInput));
 end;
 
 { Calculates the result using PNCalculator }
@@ -95,7 +95,7 @@ begin
 	if FCurrentStack = nil then
 		raise Exception.Create('Nothing to calculate');
 
-	result := Calculate(FCurrentStack, FVariableMap, PNOperationsMap);
+	result := Calculate(FCurrentStack, FVariableMap);
 end;
 
 end.

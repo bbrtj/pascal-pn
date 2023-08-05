@@ -9,7 +9,7 @@ unit PNTree;
 interface
 
 uses
-	PNCore, PNTypes;
+	PNTypes;
 
 type
 	PPNNode = ^TPNNode;
@@ -17,7 +17,6 @@ type
 	TPNNode = class
 	strict private
 		FItem: TItem;
-		FOpInfo: TOperationInfo;
 
 		FLeft: TPNNode;
 		FRight: TPNNode;
@@ -29,6 +28,7 @@ type
 		constructor Create(vItem: TItem);
 		destructor Destroy; override;
 
+		function IsOperation(): Boolean;
 		function OperationPriority(): Byte;
 		function OperationType(): TOperationType;
 
@@ -38,7 +38,6 @@ type
 		property Left: TPNNode read FLeft write SetLeft;
 		property Right: TPNNode read FRight write SetRight;
 		property Parent: TPNNode read FParent write FParent;
-		property OperationInfo: TOperationInfo read FOpInfo write FOpInfo;
 	end;
 
 implementation
@@ -65,8 +64,10 @@ procedure TPNNode.SetLeft(vNode: TPNNode);
 begin
 	if FLeft <> nil then
 		FLeft.Parent := nil;
+
 	FLeft := vNode;
-	vNode.Parent := self;
+	if vNode <> nil then
+		vNode.Parent := self;
 end;
 
 { Set the right node (plus its parent) }
@@ -74,20 +75,27 @@ procedure TPNNode.SetRight(vNode: TPNNode);
 begin
 	if FRight <> nil then
 		FRight.Parent := nil;
+
 	FRight := vNode;
-	vNode.Parent := self;
+	if vNode <> nil then
+		vNode.Parent := self;
+end;
+
+function TPNNode.IsOperation(): Boolean;
+begin
+	result := FItem.ItemType = itOperator;
 end;
 
 { Get the priority of an operation stored }
 function TPNNode.OperationPriority(): Byte;
 begin
-	result := FOpInfo.Priority;
+	result := FItem.Operation.Priority;
 end;
 
 { Get the type of an operation stored }
 function TPNNode.OperationType(): TOperationType;
 begin
-	result := FOpInfo.OperationType;
+	result := FItem.Operation.OperationType;
 end;
 
 

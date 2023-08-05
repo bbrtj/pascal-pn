@@ -12,26 +12,35 @@ uses
 	Fgl, SysUtils;
 
 const
-	cSpace = ' ';
+	cMaxPriority = 256;
 
 type
 	TNumber = Double;
-	TVariableName = String[20];
+	TVariable = String[20];
 	TOperatorName = String[10];
 
-	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
+	TVariableMap = specialize TFPGMap<TVariable, TNumber>;
+
+	TOperationCategory = (ocPrefix, ocInfix);
+	TOperationType = (otMinus, otAddition, otSubtraction, otMultiplication, otDivision, otPower, otModulo);
+	TOperationInfo = record
+		OperatorName: TOperatorName;
+		Priority: UInt16;
+		OperationType: TOperationType;
+		OperationCategory: TOperationCategory;
+	end;
 
 	TItemType = (itNumber, itVariable, itOperator);
 	TItem = record
 		case ItemType: TItemType of
 			itNumber: (Number: TNumber);
-			itVariable: (VariableName: TVariableName);
-			itOperator: (OperatorName: TOperatorName);
+			itVariable: (VariableName: TVariable);
+			itOperator: (Operation: TOperationInfo);
 	end;
 
 function MakeItem(vValue: TNumber): TItem;
 function MakeItem(const vValue: String): TItem;
-function MakeItem(const vValue: TVariableName): TItem;
+function MakeItem(const vValue: TVariable): TItem;
 function MakeItem(const vValue: TOperatorName): TItem;
 function GetItemValue(vItem: TItem): String;
 
@@ -44,8 +53,8 @@ begin
 	result.Number := vValue;
 end;
 
-{ Creates TItem from TVariableName }
-function MakeItem(const vValue: TVariableName): TItem;
+{ Creates TItem from TVariable }
+function MakeItem(const vValue: TVariable): TItem;
 begin
 	result.ItemType := itVariable;
 	result.VariableName := vValue;
@@ -59,7 +68,7 @@ begin
 	if TryStrToFloat(vValue, vNumericValue) then
 		result := MakeItem(vNumericValue)
 	else if IsValidIdent(vValue) then
-		result := MakeItem(TVariableName(vValue))
+		result := MakeItem(TVariable(vValue))
 	else
 		raise Exception.Create('Invalid token ' + vValue);
 end;
