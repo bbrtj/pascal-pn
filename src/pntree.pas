@@ -9,7 +9,7 @@ unit PNTree;
 interface
 
 uses
-	PNTypes;
+	PNBase;
 
 type
 	PPNNode = ^TPNNode;

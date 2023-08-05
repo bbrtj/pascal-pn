@@ -10,7 +10,7 @@ interface
 
 uses
 	Math, SysUtils,
-	PNStack, PNTypes;
+	PNStack, PNBase;
 
 function Calculate(vMainStack: TPNStack; vVariables: TVariableMap): TNumber;
 

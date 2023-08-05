@@ -10,7 +10,7 @@ interface
 
 uses
 	SysUtils,
-	PNCalculator, PNParser, PNStack, PNTypes;
+	PNCalculator, PNParser, PNStack, PNBase;
 
 type
 

@@ -10,7 +10,7 @@ interface
 
 uses
 	StrUtils, SysUtils, Contnrs,
-	PNTypes;
+	PNBase;
 
 type
 

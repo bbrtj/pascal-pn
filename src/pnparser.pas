@@ -24,7 +24,7 @@ interface
 
 uses
 	Fgl, SysUtils, Character,
-	PNTree, PNStack, PNTypes;
+	PNTree, PNStack, PNBase;
 
 function Parse(const vInput: String): TPNStack;
 
