@@ -94,11 +94,19 @@ begin
 	FCalc.ParseString('7.1 ^ 7');
 
 	TestWithin(FCalc.GetResult, 7.1 ** 7, cSmallPrecision);
+
+	FCalc.ParseString('7.1 ** 7');
+
+	TestWithin(FCalc.GetResult, 7.1 ** 7, cSmallPrecision);
 end;
 
 procedure TCalculationsSuite.ModuloTest();
 begin
 	FCalc.ParseString('256 % 3');
+
+	TestWithin(FCalc.GetResult, 256 mod 3, cSmallPrecision);
+
+	FCalc.ParseString('256 mod 3');
 
 	TestWithin(FCalc.GetResult, 256 mod 3, cSmallPrecision);
 end;
