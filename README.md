@@ -31,15 +31,6 @@ This notation is stored as a simple stack can be exported to a string. The progr
 + - * / ^ %
 ```
 
-## TODO
-
-There are some things that could use improvements:
-
-- Varying arity of operators, such as the currently unsupported unary `-`
-- Unary operators: prefix and suffix variants
-- Optimization, especially for the string parsing algorithm
-- More testing, possibly unit testing in Pascal
-
 ### Export format
 
 This program can only export and import from its own custom format:

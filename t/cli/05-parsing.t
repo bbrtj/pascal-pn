@@ -12,6 +12,7 @@ use CLIHelper;
 subtest 'single context' => sub {
 	for my $case (
 		['2 + 3', 'o+#2#3'],
+		['2 + -3', 'o+#2#p-#3'],
 		['2 + 3 * 4', 'o+#2#o*#3#4'],
 		['2 * 3 + 4', 'o+#o*#2#3#4'],
 		['2 + 3 * var', 'o+#2#o*#3#vvar'],
@@ -26,6 +27,7 @@ subtest 'single context' => sub {
 
 subtest 'nested contexts' => sub {
 	for my $case (
+		['-(-2 + 3)', 'p-#o+#p-#2#3'],
 		['(2 + 3) * 4', 'o*#o+#2#3#4'],
 		['(2 + 3) * (4 + 5) + (6 - 7)', 'o+#o*#o+#2#3#o+#4#5#o-#6#7'],
 		['(2 + 3) + 4', 'o+#o+#2#3#4'],

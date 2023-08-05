@@ -11,6 +11,7 @@ use CLIHelper;
 
 subtest 'check operators' => sub {
 	for my $case (
+		['p-#2', qr/-2$/],
 		['o+#2.5#3.5', qr/6$/],
 		['o-#2.5#3.5', qr/-1$/],
 		['o*#2.5#3.5', qr/8\.75$/],
@@ -23,3 +24,4 @@ subtest 'check operators' => sub {
 };
 
 done_testing;
+

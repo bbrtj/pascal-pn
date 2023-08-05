@@ -17,6 +17,7 @@ type
 		procedure Setup(); override;
 		procedure TearDown(); override;
 
+		procedure MinusTest();
 		procedure AdditionTest();
 		procedure SubtractionTest();
 		procedure MultiplicationTest();
@@ -35,6 +36,7 @@ constructor TCalculationsSuite.Create();
 begin
 	inherited;
 
+	Scenario(@self.MinusTest, 'should be able to perform unary minus');
 	Scenario(@self.AdditionTest, 'should be able to perform addition');
 	Scenario(@self.SubtractionTest, 'should be able to perform subtraction');
 	Scenario(@self.MultiplicationTest, 'should be able to perform multiplication');
@@ -51,6 +53,12 @@ end;
 procedure TCalculationsSuite.TearDown();
 begin
 	self.FCalc.Free;
+end;
+
+procedure TCalculationsSuite.MinusTest();
+begin
+	FCalc.ParseString('- 2 - 3');
+	TestWithin(FCalc.GetResult, -2 - 3, cSmallPrecision);
 end;
 
 procedure TCalculationsSuite.AdditionTest();
