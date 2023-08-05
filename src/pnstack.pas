@@ -26,7 +26,8 @@ type
 	public
 		const
 			cSeparatorChar = '#';
-			cOperatorPrefixChar = 'o';
+			cInfixOperatorPrefixChar = 'o';
+			cPrefixOperatorPrefixChar = 'p';
 			cVariablePrefixChar = 'v';
 
 		procedure Push(vItem: TItem);
@@ -108,7 +109,12 @@ begin
 		case vItem.ItemType of
 			itNumber: vItemString := FloatToStr(vItem.Number);
 			itVariable: vItemString := cVariablePrefixChar + vItem.VariableName;
-			itOperator: vItemString := cOperatorPrefixChar + vItem.OperatorName;
+			itOperator: begin
+				case vItem.Operation.OperationCategory of
+					ocInfix: vItemString := cInfixOperatorPrefixChar + vItem.Operation.OperatorName;
+					ocPrefix: vItemString := cPrefixOperatorPrefixChar + vItem.Operation.OperatorName;
+				end;
+			end;
 		end;
 
 		result := vItemString + result;
@@ -140,8 +146,11 @@ begin
 		if StartsStr(cVariablePrefixChar, vPart) then
 			vStack.Push(MakeItem(TVariableName(SkipFirstChar())))
 
-		else if StartsStr(cOperatorPrefixChar, vPart) then
-			vStack.Push(MakeItem(TOperatorName(SkipFirstChar())))
+		else if StartsStr(cInfixOperatorPrefixChar, vPart) then
+			vStack.Push(MakeItem(TOperatorName(SkipFirstChar()), ocInfix))
+
+		else if StartsStr(cPrefixOperatorPrefixChar, vPart) then
+			vStack.Push(MakeItem(TOperatorName(SkipFirstChar()), ocPrefix))
 
 		else
 			vStack.Push(MakeItem(StrToFloat(vPart)));

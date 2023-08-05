@@ -113,7 +113,7 @@ begin
 			vMainStackCopy.Push(vItem);
 
 			case vItem.ItemType of
-				itOperator: vLocalStack.Push(ApplyOperation(vItem.Operation, vLocalStack);
+				itOperator: vLocalStack.Push(ApplyOperation(vItem.Operation, vLocalStack));
 				itVariable: vLocalStack.Push(ResolveVariable(vItem, vVariables));
 				itNumber: vLocalStack.Push(vItem.Number);
 			end;

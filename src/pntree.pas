@@ -17,6 +17,7 @@ type
 	TPNNode = class
 	strict private
 		FItem: TItem;
+		FGrouped: Boolean;
 
 		FLeft: TPNNode;
 		FRight: TPNNode;
@@ -32,12 +33,13 @@ type
 		function OperationPriority(): Byte;
 		function OperationType(): TOperationType;
 
-		function NextInorder(): TPNNode;
+		function NextPreorder(): TPNNode;
 
 		property Item: TItem read FItem;
 		property Left: TPNNode read FLeft write SetLeft;
 		property Right: TPNNode read FRight write SetRight;
 		property Parent: TPNNode read FParent write FParent;
+		property Grouped: Boolean read FGrouped write FGrouped;
 	end;
 
 implementation
@@ -46,6 +48,7 @@ implementation
 constructor TPNNode.Create(vItem: TItem);
 begin
 	FItem := vItem;
+	FGrouped := False;
 	FLeft := nil;
 	FRight := nil;
 	FParent := nil;
@@ -99,8 +102,8 @@ begin
 end;
 
 
-{ Traverse the tree Inorder }
-function TPNNode.NextInorder(): TPNNode;
+{ Traverse the tree Preorder }
+function TPNNode.NextPreorder(): TPNNode;
 var
 	vLast: TPNNode;
 begin

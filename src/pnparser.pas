@@ -6,7 +6,7 @@ unit PNParser;
 	Code responsible for transforming a string into a PN stack
 
 	body = statement
-	statement = block | operation | operand
+	statement = block | operand | operation
 
 	operation = (prefix_op statement) | (statement infix_op statement)
 	block = left_brace statement right_brace
@@ -30,6 +30,13 @@ function Parse(const vInput: String): TPNStack;
 
 implementation
 
+type
+	TStatementFlag = (sfFull, sfNotOperation);
+	TStatementFlags = set of TStatementFlag;
+
+function ParseStatement(const vInput: String; var vAt: UInt32; vFlags: TStatementFlags = []): TPNNode;
+forward;
+
 function IsWithinInput(const vInput: String; var vAt: UInt32): Boolean;
 begin
 	result := vAt <= length(vInput);
@@ -41,35 +48,60 @@ begin
 		inc(vAt);
 end;
 
+function ParseOp(const vInput: String; var vAt: UInt32; vOC: TOperationCategory): TPNNode;
+var
+	vLen, vLongest: UInt32;
+	vOp: TOperatorName;
+	vOpInfo: TOperationInfo;
+begin
+	vLen := length(vInput) - vAt + 1;
+	vLongest := TOperationInfo.Longest(vOC);
+	if vLen < vLongest then
+		vLongest := vLen;
+
+	result := nil;
+	for vLen := vLongest downto 1 do begin
+		vOp := copy(vInput, vAt, vLen);
+		vOpInfo := TOperationInfo.Find(vOp, vOC);
+		if vOpInfo <> nil then begin
+			result := TPNNode.Create(MakeItem(vOpInfo));
+			break;
+		end;
+	end;
+end;
+
 function ParsePrefixOp(const vInput: String; var vAt: UInt32): TPNNode;
 begin
 	// only skip whitespace at the front
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
+
+	result := ParseOp(vInput, vAt, ocPrefix);
 end;
 
 function ParseInfixOp(const vInput: String; var vAt: UInt32): TPNNode;
 begin
 	// no need to skip whitespace in infix ops, as they must be surrounded by
 	// tokens which strip whitespace themselves
+	result := ParseOp(vInput, vAt, ocInfix);
 end;
 
 function ParseOpeningBrace(const vInput: String; var vAt: UInt32): Boolean;
 begin
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 	result := IsWithinInput(vInput, vAt) and (vInput[vAt] = '(');
 	if result then begin
 		inc(vAt);
-		SkipWhiteSpace;
+		SkipWhiteSpace(vInput, vAt);
 	end;
 end;
 
 function ParseClosingBrace(const vInput: String; var vAt: UInt32): Boolean;
 begin
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 	result := IsWithinInput(vInput, vAt) and (vInput[vAt] = ')');
 	if result then begin
 		inc(vAt);
-		SkipWhiteSpace;
+		SkipWhiteSpace(vInput, vAt);
 	end;
 end;
 
@@ -79,7 +111,7 @@ var
 	vHadPoint: Boolean;
 	vNumberStringified: String;
 begin
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 
 	vStart := vAt;
 	if not (IsWithinInput(vInput, vAt) and IsDigit(vInput[vAt])) then
@@ -92,12 +124,12 @@ begin
 			vHadPoint := True;
 		end;
 		inc(vAt);
-	until not (IsWithinInput(vInput, vAt) and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.'));
+	until not (IsWithinInput(vInput, vAt) and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
 
 	vNumberStringified := copy(vInput, vStart, vAt - 1);
 	result := TPNNode.Create(MakeItem(vNumberStringified));
 
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 end;
 
 function ParseVariableName(const vInput: String; var vAt: UInt32): TPNNode;
@@ -105,7 +137,7 @@ var
 	vStart: UInt32;
 	vVarName: TVariableName;
 begin
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 
 	vStart := vAt;
 	if not (IsWithinInput(vInput, vAt) and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
@@ -113,12 +145,12 @@ begin
 
 	repeat
 		inc(vAt);
-	until not (IsWithinInput(vInput, vAt) and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_'));
+	until not (IsWithinInput(vInput, vAt) and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
 
 	vVarName := copy(vInput, vStart, vAt - 1);
 	result := TPNNode.Create(MakeItem(vVarName));
 
-	SkipWhiteSpace;
+	SkipWhiteSpace(vInput, vAt);
 end;
 
 function ParseBlock(const vInput: String; var vAt: UInt32): TPNNode;
@@ -132,7 +164,7 @@ begin
 		result := ParseStatement(vInput, vAt);
 		if (result <> nil) and ParseClosingBrace(vInput, vAt) then begin
 			// mark result with higher precedendce as it is in block
-			result.OperationInfo.Priority += cMaxPriority;
+			result.Grouped := True;
 			exit(result);
 		end;
 	end;
@@ -155,7 +187,15 @@ var
 			vAt := vAtBacktrack;
 	end;
 
+	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean;
+	begin
+		result := vCompare.IsOperation and (not vCompare.Grouped)
+			and (vCompare.OperationPriority < vAgainst.OperationPriority);
+	end;
+
 begin
+	vOp := nil;
+	vFirst := nil;
 	vAtBacktrack := vAt;
 
 	vPartialResult := ParsePrefixOp(vInput, vAt);
@@ -164,9 +204,7 @@ begin
 		vPartialResult := ParseStatement(vInput, vAt);
 		if Success then begin
 			// check if vPartialResult is an operator (for precedence)
-			// TODO check braces
-			if vPartialResult.IsOperation
-				and (vPartialResult.OperationPriority < vOp.OperationPriority) then begin
+			if IsLowerPriority(vPartialResult, vOp) then begin
 				vOp.Left := vPartialResult.Left;
 				result := vPartialResult;
 				vPartialResult := vOp;
@@ -182,7 +220,7 @@ begin
 	vOp.Free;
 	vPartialResult.Free;
 
-	vPartialResult := ParseStatement(vInput, vAt);
+	vPartialResult := ParseStatement(vInput, vAt, [sfNotOperation]);
 	if Success then begin
 		vFirst := vPartialResult;
 		vPartialResult := ParseInfixOp(vInput, vAt);
@@ -198,12 +236,10 @@ begin
 				result.Right := vPartialResult;
 
 				// check if vPartialResult is an operator (for precedence)
-				// TODO check braces
-				if vPartialResult.IsOperation
-					and (vPartialResult.OperationPriority < result.OperationPriority) then begin
+				if IsLowerPriority(vPartialResult, result) then begin
 					result.Right := vPartialResult.Left;
 					vPartialResult.Left := result;
-				end
+				end;
 
 				exit(result);
 			end;
@@ -244,7 +280,7 @@ begin
 	result := nil;
 end;
 
-function ParseStatement(const vInput: String; var vAt: UInt32, vFull: Boolean = False): TPNNode;
+function ParseStatement(const vInput: String; var vAt: UInt32; vFlags: TStatementFlags = []): TPNNode;
 var
 	vPartialResult: TPNNode;
 	vAtBacktrack: UInt32;
@@ -252,7 +288,7 @@ var
 
 	function Success(): Boolean;
 	begin
-		result := (vPartialResult <> nil) and ((not vFull) or (vAt > vLength));
+		result := (vPartialResult <> nil) and ((not (sfFull in vFlags)) or (vAt > vLength));
 
 		// backtrack
 		if not result then
@@ -267,12 +303,14 @@ begin
 	if Success then exit(vPartialResult);
 
 	vPartialResult.Free;
-	vPartialResult := ParseOperation(vInput, vAt);
-	if Success then exit(vPartialResult);
-
-	vPartialResult.Free;
 	vPartialResult := ParseOperand(vInput, vAt);
 	if Success then exit(vPartialResult);
+
+	if not (sfNotOperation in vFlags) then begin
+		vPartialResult.Free;
+		vPartialResult := ParseOperation(vInput, vAt);
+		if Success then exit(vPartialResult);
+	end;
 
 	vPartialResult.Free;
 	result := nil;
@@ -283,101 +321,10 @@ var
 	vAt: UInt32;
 begin
 	vAt := 1;
-	result := ParseStatement(vInput, vAt, True);
+	result := ParseStatement(vInput, vAt, [sfFull]);
 
-	if result <> nil then begin
-	end;
-end;
-
-function Tokenize(const vInput: String): TPNNode;
-
-	procedure AddNode(vNode, vLastOperation: TPNNode; vRoot: PPNNode);
-	begin
-		if vLastOperation <> nil then begin
-			if (vLastOperation.OperationType() = otInfix) and (vLastOperation.Right = nil) then
-				vLastOperation.Right := vNode
-			else
-				raise Exception.Create(
-					Format('Unexpected value %S (operator %S)', [
-						GetItemValue(vNode.Item),
-						vLastOperation.Item.OperatorName
-					])
-				);
-		end
-		else if vRoot^ = nil then
-			vRoot^ := vNode
-		else
-			raise Exception.Create(Format('Unexpected value %S', [GetItemValue(vNode.Item)]));
-	end;
-
-	{ Recursively transform standard notation into a tree }
-	function MakeTree(var vIndex: Word; vInBraces: Boolean = False): TPNNode;
-	var
-		vLastOperation: TPNNode;
-		vCurrentRoot: TPNNode;
-		vNode: TPNNode;
-		vTmp: TPNNode;
-	begin
-		vLastOperation := nil;
-		vCurrentRoot := nil;
-
-		while vIndex < vTokens.Count do begin
-			vNode := vTokens[vIndex];
-
-			if vNode.Item.ItemType = itOperator then begin
-				vNode.OperationInfo := GetOperationInfoByOperator(vNode.Item.OperatorName);
-
-				if vNode.OperationType() = otSyntax then begin
-					case vNode.OperationInfo.Syntax of
-						stGroupStart: begin
-							vIndex += 1;
-							vNode := MakeTree(vIndex, True);
-							AddNode(vNode, vLastOperation, @vCurrentRoot);
-						end;
-
-						stGroupEnd: begin
-							vInBraces := not vInBraces;
-							break;
-						end;
-					end;
-				end
-
-				else begin
-					while (vLastOperation <> nil) and (vLastOperation.OperationPriority() >= vNode.OperationPriority()) do
-						vLastOperation := vLastOperation.Parent;
-
-					if vLastOperation = nil then begin
-						vNode.Left := vCurrentRoot;
-						vCurrentRoot := vNode;
-					end
-
-					else begin
-						vTmp := vLastOperation.Right;
-						vLastOperation.Right := vNode;
-						vNode.Left := vTmp;
-					end;
-
-					vLastOperation := vNode;
-				end;
-			end
-
-			else
-				AddNode(vNode, vLastOperation, @vCurrentRoot);
-
-			vIndex += 1;
-		end;
-
-		if vInBraces then
-			raise Exception.Create('Unmatched braces');
-
-		result := vCurrentRoot;
-	end;
-
-var
-	vIndex: Word;
-begin
-	vIndex := 0;
-	result := MakeTree(vIndex);
+	if result = nil then
+		raise Exception.Create('Couldn''t parse the calculation');
 end;
 
 { Parses the entire calculation }
@@ -385,15 +332,13 @@ function Parse(const vInput: String): TPNStack;
 var
 	vNode: TPNNode;
 begin
-	vNode := TransformTokenList(vInput);
+	vNode := ParseBody(vInput);
 
 	result := TPNStack.Create;
 	while vNode <> nil do begin
 		result.Push(vNode.Item);
-		vNode := vNode.NextInorder();
+		vNode := vNode.NextPreorder();
 	end;
-
-	vTokens.Free();
 end;
 
 end.
