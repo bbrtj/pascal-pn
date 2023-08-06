@@ -32,14 +32,17 @@ type
 	private
 		type
 			TOperationInfos = Array of TOperationInfo;
+			TOperationMap = specialize TFPGMap<TOperatorName, TOperationInfo>;
+			TOperationInfoMap = Array [TOperationCategory] of TOperationMap;
 
 		class var
 			SList: TOperationInfos;
+			SMap: TOperationInfoMap;
 
 	public
 		constructor Create(vName: TOperatorName; vOT: TOperationType; vOC: TOperationCategory; vPriority: Byte);
 
-		class function Find(const vName: TOperatorName; vOT: TOperationCategory): TOperationInfo;
+		class function Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
 		class function Check(const vName: TOperatorName): Boolean;
 		class function LongestSymbolic(vOC: TOperationCategory): Byte;
 
@@ -137,15 +140,14 @@ begin
 	end;
 end;
 
-class function TOperationInfo.Find(const vName: TOperatorName; vOT: TOperationCategory): TOperationInfo;
+class function TOperationInfo.Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
 var
-	vInfo: TOperationInfo;
+	vFound: Integer;
 begin
-	result := nil;
-	for vInfo in SList do begin
-		if (vInfo.FOperationCategory = vOT) and (vInfo.FOperatorName = vName) then
-			exit(vInfo);
-	end;
+	if SMap[vOC].Find(vName, vFound) then
+		result := SMap[vOC].Data[vFound]
+	else
+		result := nil;
 end;
 
 class function TOperationInfo.Check(const vName: TOperatorName): Boolean;
@@ -172,6 +174,7 @@ end;
 
 var
 	vInfo: TOperationInfo;
+	vOC: TOperationCategory;
 initialization
 	TOperationInfo.SList := [
 		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
@@ -188,9 +191,22 @@ initialization
 		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255)
 	];
 
+	for vOC in TOperationCategory do begin
+		TOperationInfo.SMap[vOC] := TOperationInfo.TOperationMap.Create;
+		TOperationInfo.SMap[vOC].Sorted := True;
+		for vInfo in TOperationInfo.SList do begin
+			if (vInfo.OperationCategory = vOC) then
+				TOperationInfo.SMap[vOC].Add(vInfo.OperatorName, vInfo);
+		end;
+	end;
+
 finalization
 	for vInfo in TOperationInfo.SList do
 		vInfo.Free;
+
+	for vOC in TOperationCategory do
+		TOperationInfo.SMap[vOC].Free;
+
 
 end.
 

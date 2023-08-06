@@ -38,7 +38,7 @@ var
 	vInput: UnicodeString;
 	vInputLength: UInt32;
 	vAt: UInt32;
-	vLongestOperator: Array [ocPrefix .. ocInfix] of UInt32;
+	vLongestOperator: Array [TOperationCategory] of UInt32;
 
 function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 forward;
