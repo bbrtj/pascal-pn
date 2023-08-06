@@ -35,7 +35,7 @@ type
 	TStatementFlags = set of TStatementFlag;
 
 var
-	vInput: String;
+	vInput: UnicodeString;
 	vInputLength: UInt32;
 	vAt: UInt32;
 
@@ -353,7 +353,7 @@ end;
 
 function ParseBody(const vParseInput: String): TPNNode;
 begin
-	vInput := vParseInput;
+	vInput := UnicodeString(vParseInput);
 	vInputLength := length(vInput);
 	vAt := 1;
 	result := ParseStatement([sfFull]);

@@ -17,8 +17,9 @@ build-library: prepare
 build-test: prepare
 	$(FPC) $(FPC_FLAGS) -Fut/lib -Fut/pascal-tap/src -FU$(BUILD_DIR) -ot/tests.t t/tests.t.pas
 
+# can be profiled with valgrind --tool=callgrind build/bench && callgrind_annotate
 build-bench: prepare
-	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) endpoints/bench.pp
+	$(FPC) $(FPC_FLAGS) -O$(O_LEVEL) -gv endpoints/bench.pp
 
 test: build build-test
 	$(TEST_RUNNER) t t/cli $(TEST_FLAG)
