@@ -23,7 +23,7 @@ unit PNParser;
 interface
 
 uses
-	Fgl, SysUtils, Character,
+	Fgl, SysUtils, Character, Math,
 	PNTree, PNStack, PNBase;
 
 function Parse(const vInput: String): TPNStack;
@@ -38,6 +38,7 @@ var
 	vInput: UnicodeString;
 	vInputLength: UInt32;
 	vAt: UInt32;
+	vLongestOperator: Array [ocPrefix .. ocInfix] of UInt32;
 
 function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 forward;
@@ -67,7 +68,7 @@ end;
 
 function ParseOp(vOC: TOperationCategory): TPNNode;
 var
-	vLen, vLongest: UInt32;
+	vLen: UInt32;
 	vOp: TOperatorName;
 	vOpInfo: TOperationInfo;
 begin
@@ -88,12 +89,8 @@ begin
 
 	// symbolic operator
 	vLen := vInputLength - vAt + 1;
-	vLongest := TOperationInfo.LongestSymbolic(vOC);
-	if vLen < vLongest then
-		vLongest := vLen;
-
 	result := nil;
-	for vLen := vLongest downto 1 do begin
+	for vLen := Min(vLen, vLongestOperator[vOC]) downto 1 do begin
 		vOp := copy(vInput, vAt, vLen);
 		vOpInfo := TOperationInfo.Find(vOp, vOC);
 		if vOpInfo <> nil then begin
@@ -380,5 +377,10 @@ begin
 	vRootNode.Free;
 end;
 
+var
+	vOC: TOperationCategory;
+initialization
+	for vOC in TOperationCategory do
+		vLongestOperator[vOC] := TOperationInfo.LongestSymbolic(vOC);
 end.
 
