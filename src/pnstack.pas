@@ -16,10 +16,7 @@ type
 
 	TPNBaseStack = class abstract(TStack)
 	public
-		destructor Destroy; override;
-
 		function Empty(): Boolean;
-		procedure Clear(); virtual;
 	end;
 
 	TPNStack = class(TPNBaseStack)
@@ -30,10 +27,12 @@ type
 			cPrefixOperatorPrefixChar = 'p';
 			cVariablePrefixChar = 'v';
 
+		destructor Destroy; override;
+
 		procedure Push(vItem: TItem);
 		function Pop(): TItem;
 		function Top(): TItem;
-		procedure Clear(); override;
+		procedure Clear();
 
 		function ToString(): String; override;
 		class function FromString(const vInput: String): TPNStack;
@@ -48,7 +47,7 @@ type
 
 implementation
 
-destructor TPNBaseStack.Destroy;
+destructor TPNStack.Destroy;
 begin
 	self.Clear();
 	inherited;
@@ -58,13 +57,6 @@ end;
 function TPNBaseStack.Empty(): Boolean;
 begin
 	result := not self.AtLeast(1);
-end;
-
-{ Clear the stack }
-procedure TPNBaseStack.Clear();
-begin
-	while not self.Empty() do
-		self.Pop();
 end;
 
 { Pushes on top of the stack }
