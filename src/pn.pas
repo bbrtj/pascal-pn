@@ -72,7 +72,7 @@ end;
 { Defines a new variable for the calculations }
 procedure TPN.DefineVariable(const vVariable: TVariableName; vNumber: TNumber);
 begin
-	FVariableMap.Add(vVariable, vNumber);
+	FVariableMap.AddOrSetData(vVariable, vNumber);
 end;
 
 { Removes all defined variables for the calculation }
