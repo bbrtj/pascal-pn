@@ -19,7 +19,7 @@ type
 		destructor Destroy; override;
 
 		function Empty(): Boolean;
-		procedure Clear();
+		procedure Clear(); virtual;
 	end;
 
 	TPNStack = class(TPNBaseStack)
@@ -33,6 +33,7 @@ type
 		procedure Push(vItem: TItem);
 		function Pop(): TItem;
 		function Top(): TItem;
+		procedure Clear(); override;
 
 		function ToString(): String; override;
 		class function FromString(const vInput: String): TPNStack;
@@ -79,11 +80,11 @@ end;
 { Pops the top of the stack }
 function TPNStack.Pop(): TItem;
 var
-	res: ^TItem;
+	vRes: ^TItem;
 begin
-	res := inherited Pop();
-	result := TItem(res^);
-	Dispose(res);
+	vRes := inherited Pop();
+	result := TItem(vRes^);
+	Dispose(vRes);
 end;
 
 { Returns the top of the stack without poping it }
@@ -93,6 +94,12 @@ var
 begin
 	vRes := self.Peek();
 	result := TItem(vRes^);
+end;
+
+procedure TPNStack.Clear();
+begin
+	while not self.Empty() do
+		self.Pop();
 end;
 
 { Exports to string, destroys the stack in the process }

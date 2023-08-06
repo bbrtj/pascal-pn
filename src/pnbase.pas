@@ -170,6 +170,8 @@ begin
 	end;
 end;
 
+var
+	vInfo: TOperationInfo;
 initialization
 	TOperationInfo.SList := [
 		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
@@ -186,11 +188,9 @@ initialization
 		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255)
 	];
 
-// var
-// 	vInfo: TOperationInfo;
-// finalization
-// 	for vInfo in TOperationInfo.SList do
-// 		vInfo.Free;
+finalization
+	for vInfo in TOperationInfo.SList do
+		vInfo.Free;
 
 end.
 

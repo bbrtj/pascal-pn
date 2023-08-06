@@ -366,14 +366,18 @@ end;
 function Parse(const vInput: String): TPNStack;
 var
 	vNode: TPNNode;
+	vRootNode: TPNNode;
 begin
 	vNode := ParseBody(vInput);
+	vRootNode := vNode;
 
 	result := TPNStack.Create;
 	while vNode <> nil do begin
 		result.Push(vNode.Item);
 		vNode := vNode.NextPreorder();
 	end;
+
+	vRootNode.Free;
 end;
 
 end.

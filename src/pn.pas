@@ -45,17 +45,15 @@ end;
 
 destructor TPN.Destroy;
 begin
-	FCurrentStack.Free();
-	FVariableMap.Free();
+	FCurrentStack.Free;
+	FVariableMap.Free;
 	inherited;
 end;
 
 { Sets a new stack with extra care to free the old one }
 procedure TPN.SetStack(vStack: TPNStack);
 begin
-	if FCurrentStack <> nil then
-		FreeAndNil(FCurrentStack);
-
+	FCurrentStack.Free;
 	FCurrentStack := vStack;
 end;
 
@@ -92,7 +90,7 @@ end;
 { Calculates the result using PNCalculator }
 function TPN.GetResult(): TNumber;
 begin
-	if FCurrentStack = nil then
+	if (FCurrentStack = nil) or FCurrentStack.Empty then
 		raise Exception.Create('Nothing to calculate');
 
 	result := Calculate(FCurrentStack, FVariableMap);

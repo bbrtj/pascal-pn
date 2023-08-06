@@ -153,7 +153,6 @@ begin
 
 		vLocalStack.Free;
 		vMainStackCopy.Free;
-
 	end;
 end;
 
