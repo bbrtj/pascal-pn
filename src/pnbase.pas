@@ -19,7 +19,7 @@ type
 	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
 
 	TOperationCategory = (ocPrefix, ocInfix);
-	TOperationType = (otMinus, otAddition, otSubtraction, otMultiplication, otDivision, otPower, otModulo);
+	TOperationType = (otSeparator, otMinus, otAddition, otSubtraction, otMultiplication, otDivision, otPower, otModulo, otLog, otLogN);
 
 	TOperationInfo = class
 	strict private
@@ -149,15 +149,18 @@ end;
 
 initialization
 	TOperationInfo.SList := [
-		TOperationInfo.Create('+',    otAddition,        ocInfix,   10),
-		TOperationInfo.Create('-',    otSubtraction,     ocInfix,   10),
-		TOperationInfo.Create('*',    otMultiplication,  ocInfix,   20),
-		TOperationInfo.Create('/',    otDivision,        ocInfix,   20),
-		TOperationInfo.Create('%',    otModulo,          ocInfix,   20),
-		TOperationInfo.Create('mod',  otModulo,          ocInfix,   20),
-		TOperationInfo.Create('^',    otPower,           ocInfix,   30),
-		TOperationInfo.Create('**',   otPower,           ocInfix,   30),
-		TOperationInfo.Create('-',    otMinus,           ocPrefix,  255)
+		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
+		TOperationInfo.Create('+',     otAddition,        ocInfix,   10),
+		TOperationInfo.Create('-',     otSubtraction,     ocInfix,   10),
+		TOperationInfo.Create('*',     otMultiplication,  ocInfix,   20),
+		TOperationInfo.Create('/',     otDivision,        ocInfix,   20),
+		TOperationInfo.Create('%',     otModulo,          ocInfix,   20),
+		TOperationInfo.Create('mod',   otModulo,          ocInfix,   20),
+		TOperationInfo.Create('^',     otPower,           ocInfix,   30),
+		TOperationInfo.Create('**',    otPower,           ocInfix,   30),
+		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  110),
+		TOperationInfo.Create('log',   otLog,             ocPrefix,  110),
+		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255)
 	];
 
 // var

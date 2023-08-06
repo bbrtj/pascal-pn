@@ -194,7 +194,7 @@ var
 
 	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean;
 	begin
-		result := vCompare.IsOperation and (not vCompare.Grouped)
+		result := (vCompare <> nil) and vCompare.IsOperation and (not vCompare.Grouped)
 			and (vCompare.OperationPriority <= vAgainst.OperationPriority);
 	end;
 
@@ -208,16 +208,17 @@ begin
 		vOp := vPartialResult;
 		vPartialResult := ParseStatement();
 		if Success then begin
-			vOp.Left := vPartialResult;
+			vOp.Right := vPartialResult;
 
 			// check if vPartialResult is an operator (for precedence)
-			// (must descent to find leftmost operator)
+			// (must descent to find leftmost operator which has a left part)
 			if IsLowerPriority(vPartialResult, vOp) then begin
-				while IsLowerPriority(vPartialResult.Left, vOp) do
+				while IsLowerPriority(vPartialResult.Left, vOp)
+					and (vPartialResult.Left.Left <> nil) do
 					vPartialResult := vPartialResult.Left;
-				result := vOp.Left;
-				vOp.Left := vPartialResult.Left;
-				result.Left := vOp;
+				result := vOp.Right;
+				vOp.Right := vPartialResult.Left;
+				vPartialResult.Left := vOp;
 			end
 			else
 				result := vOp;

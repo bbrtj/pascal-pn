@@ -24,6 +24,7 @@ type
 		procedure DivisionTest();
 		procedure PowerTest();
 		procedure ModuloTest();
+		procedure LogarithmTest();
 	end;
 
 
@@ -43,6 +44,7 @@ begin
 	Scenario(@self.DivisionTest, 'should be able to perform division');
 	Scenario(@self.PowerTest, 'should be able to perform power');
 	Scenario(@self.ModuloTest, 'should be able to perform modulo');
+	Scenario(@self.LogarithmTest, 'should be able to calculate logarithms');
 end;
 
 procedure TCalculationsSuite.Setup();
@@ -109,6 +111,25 @@ begin
 	FCalc.ParseString('256 mod 3');
 
 	TestWithin(FCalc.GetResult, 256 mod 3, cSmallPrecision);
+end;
+
+procedure TCalculationsSuite.LogarithmTest();
+begin
+	FCalc.ParseString('ln 132');
+
+	TestWithin(FCalc.GetResult, LnXP1(132), cSmallPrecision);
+
+	FCalc.ParseString('log(2, 256)');
+
+	TestWithin(FCalc.GetResult, LogN(2, 256), cSmallPrecision);
+
+	FCalc.ParseString('log 2, 256 ');
+
+	TestWithin(FCalc.GetResult, LogN(2, 256), cSmallPrecision);
+
+	FCalc.ParseString('log 2, 128 + 128 ');
+
+	TestWithin(FCalc.GetResult, LogN(2, 256), cSmallPrecision);
 end;
 
 end.

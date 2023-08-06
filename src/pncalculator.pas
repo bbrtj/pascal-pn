@@ -25,10 +25,30 @@ begin
 	result := vStack.Pop();
 end;
 
+{ Handler for separating , }
+function OpSeparator(vStack: TPNNumberStack): TNumber;
+begin
+	// this does nothing (as is should)
+	result := NextArg(vStack);
+end;
+
 { Handler for unary - }
 function OpMinus(vStack: TPNNumberStack): TNumber;
 begin
 	result := -1 * NextArg(vStack);
+end;
+
+{ Handler for function ln }
+function OpLogN(vStack: TPNNumberStack): TNumber;
+begin
+	result := LnXP1(NextArg(vStack));
+end;
+
+{ Handler for function log }
+function OpLog(vStack: TPNNumberStack): TNumber;
+begin
+	result := NextArg(vStack);
+	result := LogN(result, NextArg(vStack));
 end;
 
 { Handler for + }
@@ -77,13 +97,16 @@ end;
 function ApplyOperation(vOp: TOperationInfo; vStack: TPNNumberStack): TNumber;
 begin
 	case vOp.OperationType of
-		otMinus: result := OpMinus(vStack);
+		otSeparator: result := OpSeparator(vStack);
 		otAddition: result := OpAddition(vStack);
 		otSubtraction: result := OpSubtraction(vStack);
 		otMultiplication: result := OpMultiplication(vStack);
 		otDivision: result := OpDivision(vStack);
 		otPower: result := OpPower(vStack);
 		otModulo: result := OpModulo(vStack);
+		otMinus: result := OpMinus(vStack);
+		otLogN: result := OpLogN(vStack);
+		otLog: result := OpLog(vStack);
 	end;
 end;
 
