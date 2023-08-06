@@ -9,7 +9,7 @@ unit PNBase;
 interface
 
 uses
-	Fgl, SysUtils;
+	Fgl, SysUtils, Character;
 
 type
 	TNumber = Double;
@@ -27,6 +27,7 @@ type
 		FPriority: Byte;
 		FOperationType: TOperationType;
 		FOperationCategory: TOperationCategory;
+		FSymbolic: Boolean;
 
 	private
 		type
@@ -39,7 +40,8 @@ type
 		constructor Create(vName: TOperatorName; vOT: TOperationType; vOC: TOperationCategory; vPriority: Byte);
 
 		class function Find(const vName: TOperatorName; vOT: TOperationCategory): TOperationInfo;
-		class function Longest(vOC: TOperationCategory): Byte;
+		class function Check(const vName: TOperatorName): Boolean;
+		class function LongestSymbolic(vOC: TOperationCategory): Byte;
 
 		property OperatorName: TOperatorName read FOperatorName;
 		property Priority: Byte read FPriority;
@@ -118,11 +120,21 @@ begin
 end;
 
 constructor TOperationInfo.Create(vName: TOperatorName; vOT: TOperationType; vOC: TOperationCategory; vPriority: Byte);
+var
+	vChar: Char;
 begin
 	FOperatorName := vName;
 	FOperationType := vOT;
 	FOperationCategory := vOC;
 	FPriority := vPriority;
+
+	FSymbolic := True;
+	for vChar in vName do begin
+		if IsLetterOrDigit(vChar) or (vChar = '_') then begin
+			FSymbolic := False;
+			break;
+		end;
+	end;
 end;
 
 class function TOperationInfo.Find(const vName: TOperatorName; vOT: TOperationCategory): TOperationInfo;
@@ -131,18 +143,29 @@ var
 begin
 	result := nil;
 	for vInfo in SList do begin
-		if (vInfo.OperationCategory = vOT) and (vInfo.OperatorName = vName) then
+		if (vInfo.FOperationCategory = vOT) and (vInfo.FOperatorName = vName) then
 			exit(vInfo);
 	end;
 end;
 
-class function TOperationInfo.Longest(vOC: TOperationCategory): Byte;
+class function TOperationInfo.Check(const vName: TOperatorName): Boolean;
+var
+	vInfo: TOperationInfo;
+begin
+	result := False;
+	for vInfo in SList do begin
+		if vInfo.FOperatorName = vName then
+			exit(True);
+	end;
+end;
+
+class function TOperationInfo.LongestSymbolic(vOC: TOperationCategory): Byte;
 var
 	vInfo: TOperationInfo;
 begin
 	result := 0;
 	for vInfo in SList do begin
-		if (vInfo.OperationCategory = vOC) and (length(vInfo.FOperatorName) > result) then
+		if vInfo.FSymbolic and (vInfo.FOperationCategory = vOC) and (length(vInfo.FOperatorName) > result) then
 			result := length(vInfo.FOperatorName);
 	end;
 end;

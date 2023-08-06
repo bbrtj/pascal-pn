@@ -4,7 +4,7 @@ unit CalcTests;
 
 interface
 
-uses TAPSuite, TAP, PN, Math;
+uses TAPSuite, TAP, PN, Math, SysUtils;
 
 type
 	TCalculationsSuite = class(TTAPSuite)
@@ -25,8 +25,8 @@ type
 		procedure PowerTest();
 		procedure ModuloTest();
 		procedure LogarithmTest();
+		procedure VariablesTest();
 	end;
-
 
 implementation
 
@@ -45,6 +45,7 @@ begin
 	Scenario(@self.PowerTest, 'should be able to perform power');
 	Scenario(@self.ModuloTest, 'should be able to perform modulo');
 	Scenario(@self.LogarithmTest, 'should be able to calculate logarithms');
+	Scenario(@self.VariablesTest, 'should be able to use variables');
 end;
 
 procedure TCalculationsSuite.Setup();
@@ -130,6 +131,29 @@ begin
 	FCalc.ParseString('log 2, 128 + 128 ');
 
 	TestWithin(FCalc.GetResult, LogN(2, 256), cSmallPrecision);
+end;
+
+procedure TCalculationsSuite.VariablesTest();
+begin
+	FCalc.ParseString('log logv, logv');
+	FCalc.DefineVariable('logv', 5);
+
+	TestWithin(FCalc.GetResult, 1, cSmallPrecision);
+
+	try
+		FCalc.ParseString('mod mod mod');
+		TestFail('variables can''t be named like operators');
+	except
+		on E: Exception do TestPass('got expected error: ' + E.Message);
+	end;
+
+	FCalc.ParseString('-undef');
+	try
+		TestWithin(FCalc.GetResult, 1, cSmallPrecision);
+		TestFail('variables must be defined');
+	except
+		on E: Exception do TestPass('got expected error: ' + E.Message);
+	end;
 end;
 
 end.

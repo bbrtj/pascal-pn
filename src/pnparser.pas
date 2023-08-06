@@ -53,14 +53,42 @@ begin
 		inc(vAt);
 end;
 
+function ParseWord(): Boolean;
+begin
+	if not (IsWithinInput() and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
+		exit(False);
+
+	repeat
+		inc(vAt);
+	until not (IsWithinInput() and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
+
+	result := True;
+end;
+
 function ParseOp(vOC: TOperationCategory): TPNNode;
 var
 	vLen, vLongest: UInt32;
 	vOp: TOperatorName;
 	vOpInfo: TOperationInfo;
 begin
+	SkipWhiteSpace;
+
+	// word operator
+	vLen := vAt;
+	if ParseWord() then begin
+		result := nil;
+
+		vOp := copy(vInput, vLen, vAt - vLen);
+		vOpInfo := TOperationInfo.Find(vOp, vOC);
+		if vOpInfo <> nil then
+			result := TPNNode.Create(MakeItem(vOpInfo));
+
+		exit(result);
+	end;
+
+	// symbolic operator
 	vLen := vInputLength - vAt + 1;
-	vLongest := TOperationInfo.Longest(vOC);
+	vLongest := TOperationInfo.LongestSymbolic(vOC);
 	if vLen < vLongest then
 		vLongest := vLen;
 
@@ -78,16 +106,11 @@ end;
 
 function ParsePrefixOp(): TPNNode;
 begin
-	// only skip whitespace at the front
-	SkipWhiteSpace();
-
 	result := ParseOp(ocPrefix);
 end;
 
 function ParseInfixOp(): TPNNode;
 begin
-	// no need to skip whitespace in infix ops, as they must be surrounded by
-	// tokens which strip whitespace themselves
 	result := ParseOp(ocInfix);
 end;
 
@@ -146,14 +169,12 @@ begin
 	SkipWhiteSpace();
 
 	vStart := vAt;
-	if not (IsWithinInput() and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
+	if not ParseWord() then exit(nil);
+	vVarName := copy(vInput, vStart, vAt - vStart);
+
+	if TOperationInfo.Check(vVarName) then
 		exit(nil);
 
-	repeat
-		inc(vAt);
-	until not (IsWithinInput() and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
-
-	vVarName := copy(vInput, vStart, vAt - vStart);
 	result := TPNNode.Create(MakeItem(vVarName));
 
 	SkipWhiteSpace();
