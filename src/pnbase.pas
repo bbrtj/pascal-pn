@@ -177,6 +177,8 @@ var
 	vOC: TOperationCategory;
 initialization
 	TOperationInfo.SList := [
+		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  2),
+		TOperationInfo.Create('log',   otLog,             ocPrefix,  2),
 		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
 		TOperationInfo.Create('+',     otAddition,        ocInfix,   10),
 		TOperationInfo.Create('-',     otSubtraction,     ocInfix,   10),
@@ -186,8 +188,6 @@ initialization
 		TOperationInfo.Create('mod',   otModulo,          ocInfix,   20),
 		TOperationInfo.Create('^',     otPower,           ocInfix,   30),
 		TOperationInfo.Create('**',    otPower,           ocInfix,   30),
-		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  110),
-		TOperationInfo.Create('log',   otLog,             ocPrefix,  110),
 		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255)
 	];
 

@@ -230,7 +230,7 @@ begin
 
 			// check if vPartialResult is an operator (for precedence)
 			// (must descent to find leftmost operator which has a left part)
-			if IsLowerPriority(vPartialResult, vOp) then begin
+			if IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil) then begin
 				while IsLowerPriority(vPartialResult.Left, vOp)
 					and (vPartialResult.Left.Left <> nil) do
 					vPartialResult := vPartialResult.Left;
@@ -263,7 +263,7 @@ begin
 
 				// check if vPartialResult is an operator (for precedence)
 				// (must descent to find leftmost operator)
-				if IsLowerPriority(vPartialResult, vOp) then begin
+				if IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil) then begin
 					while IsLowerPriority(vPartialResult.Left, vOp) do
 						vPartialResult := vPartialResult.Left;
 					result := vOp.Right;
