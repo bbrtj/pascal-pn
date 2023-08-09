@@ -16,6 +16,7 @@ type
 
 	TPNBaseStack = class abstract(TStack)
 	public
+		destructor Destroy; override;
 		function Empty(): Boolean;
 	end;
 
@@ -26,8 +27,6 @@ type
 			cInfixOperatorPrefixChar = 'o';
 			cPrefixOperatorPrefixChar = 'p';
 			cVariablePrefixChar = 'v';
-
-		destructor Destroy; override;
 
 		procedure Push(vItem: TItem);
 		function Pop(): TItem;
@@ -47,9 +46,15 @@ type
 
 implementation
 
-destructor TPNStack.Destroy;
+destructor TPNBaseStack.Destroy;
+var
+	vRes: ^TItem;
 begin
-	self.Clear();
+	while not self.Empty do begin
+		vRes := self.Pop;
+		Dispose(vRes);
+	end;
+
 	inherited;
 end;
 
