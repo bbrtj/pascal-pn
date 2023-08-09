@@ -1,0 +1,3 @@
+[submodule "t/pascal-tap"]
+	path = t/pascal-tap
+	url = git@github.com:bbrtj/pascal-tap.git
