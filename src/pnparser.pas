@@ -34,11 +34,20 @@ type
 	TStatementFlag = (sfFull, sfNotOperation);
 	TStatementFlags = set of TStatementFlag;
 
+	TCleanupList = specialize TFPGObjectList<TPNNode>;
+
 var
 	vInput: UnicodeString;
 	vInputLength: UInt32;
 	vAt: UInt32;
 	vLongestOperator: Array [TOperationCategory] of UInt32;
+	vCleanup: TCleanupList;
+
+function ManagedNode(vItem: TItem): TPNNode;
+begin
+	result := TPNNode.Create(vItem);
+	vCleanup.Add(result);
+end;
 
 function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 forward;
@@ -82,7 +91,7 @@ begin
 		vOp := copy(vInput, vLen, vAt - vLen);
 		vOpInfo := TOperationInfo.Find(vOp, vOC);
 		if vOpInfo <> nil then
-			result := TPNNode.Create(MakeItem(vOpInfo));
+			result := ManagedNode(MakeItem(vOpInfo));
 
 		exit(result);
 	end;
@@ -94,7 +103,7 @@ begin
 		vOp := copy(vInput, vAt, vLen);
 		vOpInfo := TOperationInfo.Find(vOp, vOC);
 		if vOpInfo <> nil then begin
-			result := TPNNode.Create(MakeItem(vOpInfo));
+			result := ManagedNode(MakeItem(vOpInfo));
 			vAt := vAt + vLen;
 			break;
 		end;
@@ -153,7 +162,7 @@ begin
 	until not (IsWithinInput() and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
 
 	vNumberStringified := copy(vInput, vStart, vAt - vStart);
-	result := TPNNode.Create(MakeItem(vNumberStringified));
+	result := ManagedNode(MakeItem(vNumberStringified));
 
 	SkipWhiteSpace();
 end;
@@ -172,7 +181,7 @@ begin
 	if TOperationInfo.Check(vVarName) then
 		exit(nil);
 
-	result := TPNNode.Create(MakeItem(vVarName));
+	result := ManagedNode(MakeItem(vVarName));
 
 	SkipWhiteSpace();
 end;
@@ -185,11 +194,14 @@ begin
 
 	if ParseOpeningBrace() then begin
 		result := ParseStatement();
-		if (result <> nil) and ParseClosingBrace() then begin
-			// mark result with higher precedendce as it is in block
-			result.Grouped := True;
-			exit(result);
-		end;
+		if result = nil then
+			raise EInvalidStatement.Create('Invalid statement at offset ' + IntToStr(vAt));
+		if not ParseClosingBrace() then
+			raise EUnmatchedBraces.Create('Missing braces at offset ' + IntToStr(vAt));
+
+		// mark result with higher precedendce as it is in block
+		result.Grouped := True;
+		exit(result);
 	end;
 
 	vAt := vAtBacktrack;
@@ -217,8 +229,6 @@ var
 	end;
 
 begin
-	vOp := nil;
-	vFirst := nil;
 	vAtBacktrack := vAt;
 
 	vPartialResult := ParsePrefixOp();
@@ -244,9 +254,6 @@ begin
 			exit(result);
 		end;
 	end;
-
-	vOp.Free;
-	vPartialResult.Free;
 
 	vPartialResult := ParseStatement([sfNotOperation]);
 	if Success then begin
@@ -278,9 +285,6 @@ begin
 		end;
 	end;
 
-	vOp.Free;
-	vPartialResult.Free;
-	vFirst.Free;
 	result := nil;
 end;
 
@@ -304,11 +308,9 @@ begin
 	vPartialResult := ParseNumber();
 	if Success then exit(vPartialResult);
 
-	vPartialResult.Free;
 	vPartialResult := ParseVariableName();
 	if Success then exit(vPartialResult);
 
-	vPartialResult.Free;
 	result := nil;
 end;
 
@@ -327,7 +329,6 @@ var
 	end;
 
 begin
-	vPartialResult := nil;
 	vAtBacktrack := vAt;
 
 	if not (sfNotOperation in vFlags) then begin
@@ -335,16 +336,13 @@ begin
 		if Success then exit(vPartialResult);
 	end;
 
-	vPartialResult.Free;
 	vPartialResult := ParseBlock();
 	if Success then exit(vPartialResult);
 
 	// operand last, as it is a part of an operation
-	vPartialResult.Free;
 	vPartialResult := ParseOperand();
 	if Success then exit(vPartialResult);
 
-	vPartialResult.Free;
 	result := nil;
 end;
 
@@ -356,25 +354,27 @@ begin
 	result := ParseStatement([sfFull]);
 
 	if result = nil then
-		raise Exception.Create('Couldn''t parse the calculation');
+		raise EParsingFailed.Create('Couldn''t parse the calculation');
 end;
 
 { Parses the entire calculation }
 function Parse(const vInput: String): TPNStack;
 var
 	vNode: TPNNode;
-	vRootNode: TPNNode;
 begin
-	vNode := ParseBody(vInput);
-	vRootNode := vNode;
+	vCleanup := TCleanupList.Create;
+	try
+		vNode := ParseBody(vInput);
 
-	result := TPNStack.Create;
-	while vNode <> nil do begin
-		result.Push(vNode.Item);
-		vNode := vNode.NextPreorder();
+		result := TPNStack.Create;
+		while vNode <> nil do begin
+			result.Push(vNode.Item);
+			vNode := vNode.NextPreorder();
+		end;
+
+	finally
+		vCleanup.Free;
 	end;
-
-	vRootNode.Free;
 end;
 
 var

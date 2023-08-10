@@ -27,8 +27,8 @@ type
 		procedure SetRight(vNode: TPNNode);
 	public
 		constructor Create(vItem: TItem);
-		destructor Destroy; override;
 
+		procedure FreeRecursively();
 		function IsOperation(): Boolean;
 		function OperationPriority(): Byte;
 		function OperationType(): TOperationType;
@@ -54,10 +54,8 @@ begin
 	FParent := nil;
 end;
 
-{}
-destructor TPNNode.Destroy;
+procedure TPNNode.FreeRecursively();
 begin
-	// do not free the parent
 	FLeft.Free();
 	FRight.Free();
 end;

@@ -60,6 +60,10 @@ type
 			itOperator: (Operation: TOperationInfo);
 	end;
 
+	EParsingFailed = class(Exception);
+	EInvalidStatement = class(EParsingFailed);
+	EUnmatchedBraces = class(EParsingFailed);
+
 function MakeItem(vValue: TNumber): TItem;
 function MakeItem(const vValue: String): TItem;
 function MakeItem(const vValue: TVariableName): TItem;
