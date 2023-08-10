@@ -74,6 +74,8 @@ begin
 				WriteLn('--parse str: parses str as a standard notation string');
 				WriteLn('--export: export Polish notation instead of calculating');
 				WriteLn('--var str num: assings value num to variable str, can be specified multiple times');
+				WriteLn('Operators:');
+				Write(calc.Help);
 			end;
 			aExport: Write(calc.ExportString());
 			aCalculate: Write(Format('%G', [calc.GetResult()]));

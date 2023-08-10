@@ -34,6 +34,8 @@ type
 		procedure ParseString(const vInput: String);
 		function GetResult(): TNumber;
 
+		function Help(): String;
+
 	end;
 
 implementation
@@ -94,6 +96,11 @@ begin
 		raise Exception.Create('Nothing to calculate');
 
 	result := Calculate(FCurrentStack, FVariableMap);
+end;
+
+function TPN.Help(): String;
+begin
+	result := TOperationInfo.Help();
 end;
 
 end.

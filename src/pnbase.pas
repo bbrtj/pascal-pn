@@ -45,6 +45,7 @@ type
 		class function Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
 		class function Check(const vName: TOperatorName): Boolean;
 		class function LongestSymbolic(vOC: TOperationCategory): Byte;
+		class function Help(): String;
 
 		property OperatorName: TOperatorName read FOperatorName;
 		property Priority: Byte read FPriority;
@@ -72,6 +73,20 @@ function MakeItem(vOperation: TOperationInfo): TItem;
 function GetItemValue(vItem: TItem): String;
 
 implementation
+
+const
+	cOperationTypeDesc: Array[otSeparator .. otLogN] of String = (
+		{ otSeparator } 'separates multiple values for function calls',
+		{ otMinus } 'unary minus, yielding opposite number',
+		{ otAddition } 'addition, a plus b',
+		{ otSubtraction } 'subtraction, a minus b',
+		{ otMultiplication } 'multiplication, a times b',
+		{ otDivision } 'division, a divided by b',
+		{ otPower } 'power, a to the power of b',
+		{ otModulo } 'modulo, the remainder of a divided by b',
+		{ otLog } 'function, natural logarithm (E-based, requires one value)',
+		{ otLogN } 'function, N-based logarithm (requires two values)'
+	);
 
 { Creates TItem from TNumber }
 function MakeItem(vValue: TNumber): TItem;
@@ -176,14 +191,32 @@ begin
 	end;
 end;
 
+class function TOperationInfo.Help(): String;
+var
+	vInfo: TOperationInfo;
+	vLongest: Byte;
+begin
+	vLongest := 0;
+	for vInfo in SList do begin
+		if length(vInfo.OperatorName) > vLongest then
+			vLongest := length(vInfo.OperatorName);
+	end;
+
+	result := '';
+	for vInfo in SList do begin
+		result := result
+			+ Format('[ %-' + IntToStr(vLongest) + 's ]: ', [vInfo.OperatorName])
+			+ cOperationTypeDesc[vInfo.OperationType]
+			+ sLineBreak
+			;
+	end;
+end;
+
 var
 	vInfo: TOperationInfo;
 	vOC: TOperationCategory;
 initialization
 	TOperationInfo.SList := [
-		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  2),
-		TOperationInfo.Create('log',   otLog,             ocPrefix,  2),
-		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
 		TOperationInfo.Create('+',     otAddition,        ocInfix,   10),
 		TOperationInfo.Create('-',     otSubtraction,     ocInfix,   10),
 		TOperationInfo.Create('*',     otMultiplication,  ocInfix,   20),
@@ -192,7 +225,11 @@ initialization
 		TOperationInfo.Create('mod',   otModulo,          ocInfix,   20),
 		TOperationInfo.Create('^',     otPower,           ocInfix,   30),
 		TOperationInfo.Create('**',    otPower,           ocInfix,   30),
-		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255)
+
+		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255),
+		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
+		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  2),
+		TOperationInfo.Create('log',   otLog,             ocPrefix,  2)
 	];
 
 	for vOC in TOperationCategory do begin
