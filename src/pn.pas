@@ -28,7 +28,7 @@ type
 		procedure ImportString(const vExported: String);
 		function ExportString(): String;
 
-		procedure DefineVariable(const vVariable: TVariableName; vNumber: TNumber);
+		procedure DefineVariable(const vVariable: String; vNumber: TNumber);
 		procedure ClearVariables();
 
 		procedure ParseString(const vInput: String);
@@ -72,9 +72,9 @@ begin
 end;
 
 { Defines a new variable for the calculations }
-procedure TPN.DefineVariable(const vVariable: TVariableName; vNumber: TNumber);
+procedure TPN.DefineVariable(const vVariable: String; vNumber: TNumber);
 begin
-	FVariableMap.AddOrSetData(vVariable, vNumber);
+	FVariableMap.AddOrSetData(ParseVariable(vVariable), vNumber);
 end;
 
 { Removes all defined variables for the calculation }

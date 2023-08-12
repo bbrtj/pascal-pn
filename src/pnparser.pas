@@ -26,7 +26,8 @@ uses
 	Fgl, SysUtils, Character, Math,
 	PNTree, PNStack, PNBase;
 
-function Parse(const vInput: String): TPNStack;
+function Parse(const vParseInput: String): TPNStack;
+function ParseVariable(const vParseInput: String): String;
 
 implementation
 
@@ -346,25 +347,20 @@ begin
 	result := nil;
 end;
 
-function ParseBody(const vParseInput: String): TPNNode;
-begin
-	vInput := UnicodeString(vParseInput);
-	vInputLength := length(vInput);
-	vAt := 1;
-	result := ParseStatement([sfFull]);
-
-	if result = nil then
-		raise EParsingFailed.Create('Couldn''t parse the calculation');
-end;
-
 { Parses the entire calculation }
-function Parse(const vInput: String): TPNStack;
+function Parse(const vParseInput: String): TPNStack;
 var
 	vNode: TPNNode;
 begin
 	vCleanup := TCleanupList.Create;
+	vInput := UnicodeString(vParseInput);
+	vInputLength := length(vInput);
+	vAt := 1;
+
 	try
-		vNode := ParseBody(vInput);
+		vNode := ParseStatement([sfFull]);
+		if vNode = nil then
+			raise EParsingFailed.Create('Couldn''t parse the calculation');
 
 		result := TPNStack.Create;
 		while vNode <> nil do begin
@@ -372,6 +368,28 @@ begin
 			vNode := vNode.NextPreorder();
 		end;
 
+	finally
+		vCleanup.Free;
+	end;
+end;
+
+{ Parses one variable name }
+function ParseVariable(const vParseInput: String): String;
+var
+	vNode: TPNNode;
+begin
+	vCleanup := TCleanupList.Create;
+	vInput := UnicodeString(vParseInput);
+	vInputLength := length(vInput);
+	vAt := 1;
+
+	try
+		vNode := ParseVariableName;
+
+		if not((vNode <> nil) and (vAt > vInputLength)) then
+			raise EInvalidVariableName.Create('Invalid variable name ' + vInput);
+
+		result := vNode.Item.VariableName;
 	finally
 		vCleanup.Free;
 	end;

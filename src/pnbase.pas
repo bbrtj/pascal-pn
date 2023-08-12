@@ -75,6 +75,7 @@ type
 	EParsingFailed = class(Exception);
 	EInvalidStatement = class(EParsingFailed);
 	EUnmatchedBraces = class(EParsingFailed);
+	EInvalidVariableName = class(EParsingFailed);
 
 function MakeItem(vValue: TNumber): TItem;
 function MakeItem(const vValue: String): TItem;

@@ -23,6 +23,7 @@ type
 		procedure EmptyStatementTest();
 		procedure UnmatchedBraceTest();
 		procedure InvalidStatementTest();
+		procedure InvalidVariablesTest();
 	end;
 
 
@@ -48,6 +49,7 @@ begin
 	Scenario(@self.EmptyStatementTest, 'should error on empty statement');
 	Scenario(@self.UnmatchedBraceTest, 'should detect unmatched braces');
 	Scenario(@self.InvalidStatementTest, 'should detect invalid statement inside braces');
+	Scenario(@self.InvalidVariablesTest, 'should reject invalid variable names');
 end;
 
 procedure TParseErrorSuite.Setup();
@@ -74,6 +76,24 @@ procedure TParseErrorSuite.InvalidStatementTest();
 begin
 	self.TestForException('(-)', EInvalidStatement);
 end;
+
+procedure TParseErrorSuite.InvalidVariablesTest();
+begin
+	try
+		FCalc.DefineVariable(' test ', 5);
+		TestPass('variable name with around spaces ok');
+	except
+		on E: Exception do TestFail('variable name with around spaces not ok');
+	end;
+
+	try
+		FCalc.DefineVariable('test not', 5);
+		TestFail;
+	except
+		on E: Exception do TestIs(E, EInvalidVariableName, 'invalid variable name ok');
+	end;
+end;
+
 
 end.
 
