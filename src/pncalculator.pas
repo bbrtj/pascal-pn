@@ -246,7 +246,7 @@ end;
 function ResolveVariable(vItem: TItem; vVariables: TVariableMap): TNumber;
 begin
 	if not vVariables.TryGetData(vItem.VariableName, result) then
-		raise Exception.Create('Variable ' + vItem.VariableName + ' was not defined');
+		raise EUnknownVariable.Create('Variable ' + vItem.VariableName + ' was not defined');
 end;
 
 
@@ -277,7 +277,7 @@ begin
 		result := vLocalStack.Pop();
 
 		if not vLocalStack.Empty then
-			raise Exception.Create('Invalid Polish notation');
+			raise EInvalidExpression.Create('Invalid expression');
 
 	finally
 		while not vMainStackCopy.Empty do

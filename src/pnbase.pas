@@ -72,6 +72,10 @@ type
 			itOperator: (Operation: TOperationInfo);
 	end;
 
+	ECalculationFailed = class(Exception);
+	EInvalidExpression = class(ECalculationFailed);
+	EUnknownVariable = class(ECalculationFailed);
+
 	EParsingFailed = class(Exception);
 	EInvalidStatement = class(EParsingFailed);
 	EUnmatchedBraces = class(EParsingFailed);
