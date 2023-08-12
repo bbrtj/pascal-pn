@@ -56,7 +56,7 @@ type
 		class function Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
 		class function Check(const vName: TOperatorName): Boolean;
 		class function LongestSymbolic(vOC: TOperationCategory): Byte;
-		class function Help(): String;
+		class function Help(vFormatted: Boolean = True): String;
 
 		property OperatorName: TOperatorName read FOperatorName;
 		property Priority: Byte read FPriority;
@@ -221,7 +221,7 @@ begin
 	end;
 end;
 
-class function TOperationInfo.Help(): String;
+class function TOperationInfo.Help(vFormatted: Boolean = True): String;
 var
 	vInfo: TOperationInfo;
 	vLongest: Byte;
@@ -234,11 +234,12 @@ begin
 
 	result := '';
 	for vInfo in SList do begin
-		result := result
-			+ Format('[ %-' + IntToStr(vLongest) + 's ]: ', [vInfo.OperatorName])
-			+ cOperationTypeDesc[vInfo.OperationType]
-			+ sLineBreak
-			;
+		if vFormatted then
+			result += Format('[ %-' + IntToStr(vLongest) + 's ]: ', [vInfo.OperatorName])
+		else
+			result += vInfo.OperatorName + ': ';
+
+		result += cOperationTypeDesc[vInfo.OperationType] + sLineBreak;
 	end;
 end;
 
