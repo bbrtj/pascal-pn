@@ -93,20 +93,152 @@ begin
 	result := FMod(result, NextArg(vStack));
 end;
 
+{ Handler for // }
+function OpDiv(vStack: TPNNumberStack): TNumber;
+begin
+	result := NextArg(vStack);
+	result := Floor(result / NextArg(vStack));
+end;
+
+{ Handler for function sqrt }
+function OpSqrt(vStack: TPNNumberStack): TNumber;
+begin
+	result := NextArg(vStack) ** 0.5;
+end;
+
+{ Handler for function sin }
+function OpSin(vStack: TPNNumberStack): TNumber;
+begin
+	result := Sin(NextArg(vStack));
+end;
+
+{ Handler for function cos }
+function OpCos(vStack: TPNNumberStack): TNumber;
+begin
+	result := Cos(NextArg(vStack));
+end;
+
+{ Handler for function tan }
+function OpTan(vStack: TPNNumberStack): TNumber;
+begin
+	result := Tan(NextArg(vStack));
+end;
+
+{ Handler for function cot }
+function OpCot(vStack: TPNNumberStack): TNumber;
+begin
+	result := Cotan(NextArg(vStack));
+end;
+
+{ Handler for function arcsin }
+function OpArcSin(vStack: TPNNumberStack): TNumber;
+begin
+	result := ArcSin(NextArg(vStack));
+end;
+
+{ Handler for function arccos }
+function OpArcCos(vStack: TPNNumberStack): TNumber;
+begin
+	result := ArcCos(NextArg(vStack));
+end;
+
+{ Handler for function rand }
+{ Note: Randomization must be performed by program running the calculator }
+function OpRand(vStack: TPNNumberStack): TNumber;
+begin
+	result := Random(Floor(NextArg(vStack)));
+end;
+
+{ Handler for function min }
+function OpMin(vStack: TPNNumberStack): TNumber;
+begin
+	result := Min(NextArg(vStack), NextArg(vStack));
+end;
+
+{ Handler for function max }
+function OpMax(vStack: TPNNumberStack): TNumber;
+begin
+	result := Max(NextArg(vStack), NextArg(vStack));
+end;
+
+{ Handler for function round }
+function OpRound(vStack: TPNNumberStack): TNumber;
+begin
+	result := Round(NextArg(vStack));
+end;
+
+{ Handler for function floor }
+function OpFloor(vStack: TPNNumberStack): TNumber;
+begin
+	result := Floor(NextArg(vStack));
+end;
+
+{ Handler for function ceil }
+function OpCeil(vStack: TPNNumberStack): TNumber;
+begin
+	result := Ceil(NextArg(vStack));
+end;
+
+{ Handler for function sign }
+function OpSign(vStack: TPNNumberStack): TNumber;
+begin
+	result := Sign(NextArg(vStack));
+end;
+
+{ Handler for function abs}
+function OpAbs(vStack: TPNNumberStack): TNumber;
+begin
+	result := Abs(NextArg(vStack));
+end;
+
+{ Handler for function fact }
+function OpFact(vStack: TPNNumberStack): TNumber;
+var
+	vInd: Int64;
+begin
+	result := 1;
+	for vInd := 2 to Floor(NextArg(vStack)) do
+		result *= vInd;
+end;
+
+{ Handler for }
+function OpExp(vStack: TPNNumberStack): TNumber;
+begin
+	result := Exp(NextArg(vStack));
+end;
+
 { Apply handler }
 function ApplyOperation(vOp: TOperationInfo; vStack: TPNNumberStack): TNumber;
 begin
 	case vOp.OperationType of
 		otSeparator: result := OpSeparator(vStack);
+		otMinus: result := OpMinus(vStack);
 		otAddition: result := OpAddition(vStack);
 		otSubtraction: result := OpSubtraction(vStack);
 		otMultiplication: result := OpMultiplication(vStack);
 		otDivision: result := OpDivision(vStack);
 		otPower: result := OpPower(vStack);
 		otModulo: result := OpModulo(vStack);
-		otMinus: result := OpMinus(vStack);
+		otDiv: result := OpDiv(vStack);
+		otSqrt: result := OpSqrt(vStack);
 		otLogN: result := OpLogN(vStack);
 		otLog: result := OpLog(vStack);
+		otSin: result := OpSin(vStack);
+		otCos: result := OpCos(vStack);
+		otTan: result := OpTan(vStack);
+		otCot: result := OpCot(vStack);
+		otArcSin: result := OpArcSin(vStack);
+		otArcCos: result := OpArcCos(vStack);
+		otRand: result := OpRand(vStack);
+		otMin: result := OpMin(vStack);
+		otMax: result := OpMax(vStack);
+		otRound: result := OpRound(vStack);
+		otFloor: result := OpFloor(vStack);
+		otCeil: result := OpCeil(vStack);
+		otSign: result := OpSign(vStack);
+		otAbs: result := OpAbs(vStack);
+		otFact: result := OpFact(vStack);
+		otExp: result := OpExp(vStack);
 	end;
 end;
 

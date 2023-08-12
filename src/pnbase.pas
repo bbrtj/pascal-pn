@@ -19,7 +19,18 @@ type
 	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
 
 	TOperationCategory = (ocPrefix, ocInfix);
-	TOperationType = (otSeparator, otMinus, otAddition, otSubtraction, otMultiplication, otDivision, otPower, otModulo, otLog, otLogN);
+	TOperationType = (
+		otSeparator,    otMinus,           otAddition,
+		otSubtraction,  otMultiplication,  otDivision,
+		otPower,        otModulo,          otDiv,
+		otSqrt,         otLog,             otLogN,
+		otSin,          otCos,             otTan,
+		otCot,          otArcSin,          otArcCos,
+		otRand,         otMin,             otMax,
+		otRound,        otFloor,           otCeil,
+		otSign,         otAbs,             otFact,
+		otExp
+	);
 
 	TOperationInfo = class
 	strict private
@@ -75,7 +86,7 @@ function GetItemValue(vItem: TItem): String;
 implementation
 
 const
-	cOperationTypeDesc: Array[otSeparator .. otLogN] of String = (
+	cOperationTypeDesc: Array[otSeparator .. otExp] of String = (
 		{ otSeparator } 'separates multiple values for function calls',
 		{ otMinus } 'unary minus, yielding opposite number',
 		{ otAddition } 'addition, a plus b',
@@ -84,8 +95,26 @@ const
 		{ otDivision } 'division, a divided by b',
 		{ otPower } 'power, a to the power of b',
 		{ otModulo } 'modulo, the remainder of a divided by b',
-		{ otLog } 'function, natural logarithm (E-based, requires one value)',
-		{ otLogN } 'function, N-based logarithm (requires two values)'
+		{ otDiv } 'integer division, division without fraction',
+		{ otSqrt } 'f(x), square root of x',
+		{ otLog } 'f(x), natural logarithm of x (E-based)',
+		{ otLogN } 'f(x, y), x-based logarithm of y',
+		{ otSin } 'f(x), sinus of x',
+		{ otCos } 'f(x), cosinus of x',
+		{ otTan } 'f(x), tangent of x',
+		{ otCot } 'f(x), cotangent of x',
+		{ otArcSin } 'f(x), arcus sinus of x',
+		{ otArcCos } 'f(x), arcus cosinus of x',
+		{ otRand } 'f(x), random integer from 0 to x - 1',
+		{ otMin } 'f(x, y), smaller of two values',
+		{ otMax } 'f(x, y), larger of two values',
+		{ otRound } 'f(x), rounds x to the nearest integer',
+		{ otFloor } 'f(x), rounds x to the nearest smaller integer',
+		{ otCeil } 'f(x), rounds x to the nearest larger integer',
+		{ otSign } 'f(x), returns 1, 0 or -1 for positive, zero or negative x',
+		{ otAbs } 'f(x), returns absolute value of x',
+		{ otFact } 'f(x), returns factorial of x',
+		{ otExp } 'f(x), returns exponent of x'
 	);
 
 { Creates TItem from TNumber }
@@ -217,19 +246,38 @@ var
 	vOC: TOperationCategory;
 initialization
 	TOperationInfo.SList := [
-		TOperationInfo.Create('+',     otAddition,        ocInfix,   10),
-		TOperationInfo.Create('-',     otSubtraction,     ocInfix,   10),
-		TOperationInfo.Create('*',     otMultiplication,  ocInfix,   20),
-		TOperationInfo.Create('/',     otDivision,        ocInfix,   20),
-		TOperationInfo.Create('%',     otModulo,          ocInfix,   20),
-		TOperationInfo.Create('mod',   otModulo,          ocInfix,   20),
-		TOperationInfo.Create('^',     otPower,           ocInfix,   30),
-		TOperationInfo.Create('**',    otPower,           ocInfix,   30),
+		TOperationInfo.Create(',',       otSeparator,       ocInfix,   5),
+		TOperationInfo.Create('+',       otAddition,        ocInfix,   10),
+		TOperationInfo.Create('-',       otSubtraction,     ocInfix,   10),
+		TOperationInfo.Create('*',       otMultiplication,  ocInfix,   20),
+		TOperationInfo.Create('/',       otDivision,        ocInfix,   20),
+		TOperationInfo.Create('%',       otModulo,          ocInfix,   20),
+		TOperationInfo.Create('mod',     otModulo,          ocInfix,   20),
+		TOperationInfo.Create('//',      otDiv,             ocInfix,   20),
+		TOperationInfo.Create('div',     otDiv,             ocInfix,   20),
+		TOperationInfo.Create('^',       otPower,           ocInfix,   30),
+		TOperationInfo.Create('**',      otPower,           ocInfix,   30),
 
-		TOperationInfo.Create('-',     otMinus,           ocPrefix,  255),
-		TOperationInfo.Create(',',     otSeparator,       ocInfix,   5),
-		TOperationInfo.Create('ln',    otLogN,            ocPrefix,  2),
-		TOperationInfo.Create('log',   otLog,             ocPrefix,  2)
+		TOperationInfo.Create('sqrt',    otSqrt,            ocPrefix,  2),
+		TOperationInfo.Create('ln',      otLogN,            ocPrefix,  2),
+		TOperationInfo.Create('log',     otLog,             ocPrefix,  2),
+		TOperationInfo.Create('sin',     otSin,             ocPrefix,  2),
+		TOperationInfo.Create('cos',     otCos,             ocPrefix,  2),
+		TOperationInfo.Create('tan',     otTan,             ocPrefix,  2),
+		TOperationInfo.Create('cot',     otCot,             ocPrefix,  2),
+		TOperationInfo.Create('arcsin',  otArcSin,          ocPrefix,  2),
+		TOperationInfo.Create('arccos',  otArcCos,          ocPrefix,  2),
+		TOperationInfo.Create('rand',    otRand,            ocPrefix,  2),
+		TOperationInfo.Create('min',     otMin,             ocPrefix,  2),
+		TOperationInfo.Create('max',     otMax,             ocPrefix,  2),
+		TOperationInfo.Create('round',   otRound,           ocPrefix,  2),
+		TOperationInfo.Create('floor',   otFloor,           ocPrefix,  2),
+		TOperationInfo.Create('ceil',    otCeil,            ocPrefix,  2),
+		TOperationInfo.Create('sign',    otSign,            ocPrefix,  2),
+		TOperationInfo.Create('abs',     otAbs,             ocPrefix,  2),
+		TOperationInfo.Create('fact',    otFact,            ocPrefix,  2),
+		TOperationInfo.Create('exp',     otExp,             ocPrefix,  2),
+		TOperationInfo.Create('-',       otMinus,           ocPrefix,  255)
 	];
 
 	for vOC in TOperationCategory do begin
