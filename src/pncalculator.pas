@@ -243,7 +243,7 @@ begin
 end;
 
 { Tries to fetch a variable value from TVariableMap }
-function ResolveVariable(vItem: TItem; vVariables: TVariableMap): TNumber;
+function ResolveVariable(const vItem: TItem; vVariables: TVariableMap): TNumber;
 begin
 	if not vVariables.TryGetData(vItem.VariableName, result) then
 		raise EUnknownVariable.Create('Variable ' + vItem.VariableName + ' was not defined');

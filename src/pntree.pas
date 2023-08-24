@@ -26,7 +26,7 @@ type
 		procedure SetLeft(vNode: TPNNode);
 		procedure SetRight(vNode: TPNNode);
 	public
-		constructor Create(vItem: TItem);
+		constructor Create(const vItem: TItem);
 
 		procedure FreeRecursively();
 		function IsOperation(): Boolean;
@@ -45,7 +45,7 @@ type
 implementation
 
 {}
-constructor TPNNode.Create(vItem: TItem);
+constructor TPNNode.Create(const vItem: TItem);
 begin
 	FItem := vItem;
 	FGrouped := False;

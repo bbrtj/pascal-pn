@@ -90,7 +90,7 @@ function MakeItem(const vValue: String; vType: TItemType): TItem;
 function MakeItem(const vValue: TVariableName): TItem;
 function MakeItem(const vValue: TOperatorName; vOT: TOperationCategory): TItem;
 function MakeItem(vOperation: TOperationInfo): TItem;
-function GetItemValue(vItem: TItem): String;
+function GetItemValue(const vItem: TItem): String;
 
 implementation
 
@@ -181,7 +181,7 @@ begin
 	result.Operation := vOperation;
 end;
 
-function GetItemValue(vItem: TItem): String;
+function GetItemValue(const vItem: TItem): String;
 begin
 	case vItem.ItemType of
 		itNumber: result := FloatToStr(vItem.Number, vFloatFormat);

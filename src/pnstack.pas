@@ -28,7 +28,7 @@ type
 			cPrefixOperatorPrefixChar = 'p';
 			cVariablePrefixChar = 'v';
 
-		procedure Push(vItem: TItem);
+		procedure Push(const vItem: TItem);
 		function Pop(): TItem;
 		function Top(): TItem;
 		procedure Clear();
@@ -65,7 +65,7 @@ begin
 end;
 
 { Pushes on top of the stack }
-procedure TPNStack.Push(vItem: TItem);
+procedure TPNStack.Push(const vItem: TItem);
 var
 	vRes: ^TItem;
 begin

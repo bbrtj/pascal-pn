@@ -44,7 +44,7 @@ var
 	vLongestOperator: Array [TOperationCategory] of UInt32;
 	vCleanup: TCleanupList;
 
-function ManagedNode(vItem: TItem): TPNNode;
+function ManagedNode(const vItem: TItem): TPNNode;
 begin
 	result := TPNNode.Create(vItem);
 	vCleanup.Add(result);
