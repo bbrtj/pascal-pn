@@ -155,12 +155,12 @@ begin
 
 	vHadPoint := False;
 	repeat
-		if vInput[vAt] = '.' then begin
+		if vInput[vAt] = cDecimalSeparator then begin
 			if vHadPoint then exit(nil);
 			vHadPoint := True;
 		end;
 		inc(vAt);
-	until not (IsWithinInput() and (IsDigit(vInput[vAt]) or (vInput[vAt] = '.')));
+	until not (IsWithinInput() and (IsDigit(vInput[vAt]) or (vInput[vAt] = cDecimalSeparator)));
 
 	vNumberStringified := copy(vInput, vStart, vAt - vStart);
 	result := ManagedNode(MakeItem(vNumberStringified));

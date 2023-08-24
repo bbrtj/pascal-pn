@@ -111,17 +111,17 @@ begin
 		vItem := self.Pop();
 
 		case vItem.ItemType of
-			itNumber: vItemString := FloatToStr(vItem.Number);
-			itVariable: vItemString := cVariablePrefixChar + vItem.VariableName;
+			itNumber: vItemString := '';
+			itVariable: vItemString := cVariablePrefixChar;
 			itOperator: begin
 				case vItem.Operation.OperationCategory of
-					ocInfix: vItemString := cInfixOperatorPrefixChar + vItem.Operation.OperatorName;
-					ocPrefix: vItemString := cPrefixOperatorPrefixChar + vItem.Operation.OperatorName;
+					ocInfix: vItemString := cInfixOperatorPrefixChar;
+					ocPrefix: vItemString := cPrefixOperatorPrefixChar;
 				end;
 			end;
 		end;
 
-		result := vItemString + result;
+		result := vItemString + GetItemValue(vItem) + result;
 
 		if not self.Empty() then
 			result := cSeparatorChar + result;
@@ -144,7 +144,6 @@ begin
 	vStack := TPNStack.Create;
 	vSplit := SplitString(vInput, cSeparatorChar);
 
-
 	for vPart in vSplit do begin
 
 		if StartsStr(cVariablePrefixChar, vPart) then
@@ -157,7 +156,7 @@ begin
 			vStack.Push(MakeItem(TOperatorName(SkipFirstChar()), ocPrefix))
 
 		else
-			vStack.Push(MakeItem(StrToFloat(vPart)));
+			vStack.Push(MakeItem(vPart, itNumber));
 	end;
 
 	result := vStack;

@@ -11,6 +11,9 @@ interface
 uses
 	Fgl, SysUtils, Character;
 
+const
+	cDecimalSeparator = '.';
+
 type
 	TNumber = Double;
 	TVariableName = type String[20];
@@ -83,6 +86,7 @@ type
 
 function MakeItem(vValue: TNumber): TItem;
 function MakeItem(const vValue: String): TItem;
+function MakeItem(const vValue: String; vType: TItemType): TItem;
 function MakeItem(const vValue: TVariableName): TItem;
 function MakeItem(const vValue: TOperatorName; vOT: TOperationCategory): TItem;
 function MakeItem(vOperation: TOperationInfo): TItem;
@@ -122,6 +126,9 @@ const
 		{ otExp } 'f(x), returns exponent of x'
 	);
 
+var
+	vFloatFormat: TFormatSettings;
+
 { Creates TItem from TNumber }
 function MakeItem(vValue: TNumber): TItem;
 begin
@@ -141,11 +148,19 @@ function MakeItem(const vValue: String): TItem;
 var
 	vNumericValue: TNumber;
 begin
-	if TryStrToFloat(vValue, vNumericValue) then
+	if TryStrToFloat(vValue, vNumericValue, vFloatFormat) then
 		result := MakeItem(vNumericValue)
 	else if IsValidIdent(vValue) then
 		result := MakeItem(TVariableName(vValue))
 	else
+		raise Exception.Create('Invalid token ' + vValue);
+end;
+
+{ Creates TItem from a string (guess and check) }
+function MakeItem(const vValue: String; vType: TItemType): TItem;
+begin
+	result := MakeItem(vValue);
+	if result.ItemType <> vType then
 		raise Exception.Create('Invalid token ' + vValue);
 end;
 
@@ -169,7 +184,7 @@ end;
 function GetItemValue(vItem: TItem): String;
 begin
 	case vItem.ItemType of
-		itNumber: result := String(vItem.Number);
+		itNumber: result := FloatToStr(vItem.Number, vFloatFormat);
 		itVariable: result := vItem.VariableName;
 		itOperator: result := vItem.Operation.OperatorName;
 	end;
@@ -251,6 +266,8 @@ var
 	vInfo: TOperationInfo;
 	vOC: TOperationCategory;
 initialization
+	vFloatFormat.DecimalSeparator := cDecimalSeparator;
+
 	TOperationInfo.SList := [
 		TOperationInfo.Create(',',       otSeparator,       ocInfix,   5),
 		TOperationInfo.Create('+',       otAddition,        ocInfix,   10),
