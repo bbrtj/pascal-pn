@@ -44,7 +44,7 @@ var
 	vLongestOperator: Array [TOperationCategory] of UInt32;
 	vCleanup: TCleanupList;
 
-function ManagedNode(const vItem: TItem): TPNNode;
+function ManagedNode(const vItem: TItem): TPNNode; Inline;
 begin
 	result := TPNNode.Create(vItem);
 	vCleanup.Add(result);
@@ -53,12 +53,12 @@ end;
 function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
 forward;
 
-function IsWithinInput(): Boolean;
+function IsWithinInput(): Boolean; Inline;
 begin
 	result := vAt <= vInputLength;
 end;
 
-procedure SkipWhiteSpace();
+procedure SkipWhiteSpace(); Inline;
 begin
 	while IsWithinInput() and IsWhiteSpace(vInput[vAt]) do
 		inc(vAt);
@@ -111,12 +111,12 @@ begin
 	end;
 end;
 
-function ParsePrefixOp(): TPNNode;
+function ParsePrefixOp(): TPNNode; Inline;
 begin
 	result := ParseOp(ocPrefix);
 end;
 
-function ParseInfixOp(): TPNNode;
+function ParseInfixOp(): TPNNode; Inline;
 begin
 	result := ParseOp(ocInfix);
 end;
@@ -223,7 +223,7 @@ var
 			vAt := vAtBacktrack;
 	end;
 
-	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean;
+	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean; Inline;
 	begin
 		result := (vCompare <> nil) and vCompare.IsOperation and (not vCompare.Grouped)
 			and (vCompare.OperationPriority <= vAgainst.OperationPriority);
