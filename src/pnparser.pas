@@ -229,6 +229,12 @@ var
 			and (vCompare.OperationPriority <= vAgainst.OperationPriority);
 	end;
 
+	function IsLeftGrouped(vCompare: TPNNode): Boolean; Inline;
+	begin
+		result := (vCompare <> nil) and vCompare.IsOperation and (not vCompare.Grouped)
+			and (vCompare.Left <> nil) and vCompare.Left.Grouped;
+	end;
+
 begin
 	vAtBacktrack := vAt;
 
@@ -241,7 +247,9 @@ begin
 
 			// check if vPartialResult is an operator (for precedence)
 			// (must descent to find leftmost operator which has a left part)
-			if IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil) then begin
+			// (also do it if the left item is grouped while the entire statement is not)
+			if IsLeftGrouped(vPartialResult) or
+				(IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil)) then begin
 				while IsLowerPriority(vPartialResult.Left, vOp)
 					and (vPartialResult.Left.Left <> nil) do
 					vPartialResult := vPartialResult.Left;
