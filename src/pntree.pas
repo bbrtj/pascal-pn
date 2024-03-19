@@ -23,10 +23,10 @@ type
 		FRight: TPNNode;
 		FParent: TPNNode;
 
-		procedure SetLeft(vNode: TPNNode);
-		procedure SetRight(vNode: TPNNode);
+		procedure SetLeft(Node: TPNNode);
+		procedure SetRight(Node: TPNNode);
 	public
-		constructor Create(const vItem: TItem);
+		constructor Create(const Item: TItem);
 
 		procedure FreeRecursively();
 		function IsOperation(): Boolean;
@@ -45,9 +45,9 @@ type
 implementation
 
 {}
-constructor TPNNode.Create(const vItem: TItem);
+constructor TPNNode.Create(const Item: TItem);
 begin
-	FItem := vItem;
+	FItem := Item;
 	FGrouped := False;
 	FLeft := nil;
 	FRight := nil;
@@ -61,25 +61,25 @@ begin
 end;
 
 { Set the left node (plus its parent) }
-procedure TPNNode.SetLeft(vNode: TPNNode);
+procedure TPNNode.SetLeft(Node: TPNNode);
 begin
 	if (FLeft <> nil) and (FLeft.Parent = self) then
 		FLeft.Parent := nil;
 
-	FLeft := vNode;
-	if vNode <> nil then
-		vNode.Parent := self;
+	FLeft := Node;
+	if Node <> nil then
+		Node.Parent := self;
 end;
 
 { Set the right node (plus its parent) }
-procedure TPNNode.SetRight(vNode: TPNNode);
+procedure TPNNode.SetRight(Node: TPNNode);
 begin
 	if (FRight <> nil) and (FRight.Parent = self) then
 		FRight.Parent := nil;
 
-	FRight := vNode;
-	if vNode <> nil then
-		vNode.Parent := self;
+	FRight := Node;
+	if Node <> nil then
+		Node.Parent := self;
 end;
 
 function TPNNode.IsOperation(): Boolean;
@@ -103,16 +103,16 @@ end;
 { Traverse the tree Preorder }
 function TPNNode.NextPreorder(): TPNNode;
 var
-	vLast: TPNNode;
+	LLast: TPNNode;
 begin
 	if self.Left <> nil then
 		result := self.Left
 	else begin
 		result := self;
-		vLast := result;
+		LLast := result;
 
-		while (result <> nil) and ((result.Right = nil) or (result.Right = vLast)) do begin
-			vLast := result;
+		while (result <> nil) and ((result.Right = nil) or (result.Right = LLast)) do begin
+			LLast := result;
 			result := result.Parent;
 		end;
 

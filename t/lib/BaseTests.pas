@@ -31,12 +31,12 @@ end;
 
 procedure TBaseSuite.CreateTest();
 var
-	vCalc: TPN;
+	LCalc: TPN;
 begin
 
 	try
-		vCalc := TPN.Create;
-		vCalc.Free;
+		LCalc := TPN.Create;
+		LCalc.Free;
 		TestPass('no exception');
 	except
 		on E: Exception do begin
@@ -48,14 +48,14 @@ end;
 
 procedure TBaseSuite.ObviousCalcTest();
 var
-	vCalc: TPN;
+	LCalc: TPN;
 begin
-	vCalc := TPN.Create;
-	vCalc.ParseString('2 + 2');
+	LCalc := TPN.Create;
+	LCalc.ParseString('2 + 2');
 
 	Fatal;
-	TestWithin(vCalc.GetResult, 4, cSmallPrecision, 'result ok');
-	vCalc.Free;
+	TestWithin(LCalc.GetResult, 4, cSmallPrecision, 'result ok');
+	LCalc.Free;
 end;
 
 end.

@@ -164,13 +164,13 @@ end;
 
 procedure TCalculationsSuite.RandTest();
 var
-	vResult: Double;
+	LResult: Double;
 begin
 	FCalc.ParseString('rand 15156512');
-	vResult := FCalc.GetResult;
+	LResult := FCalc.GetResult;
 
 	FCalc.ParseString('rand 15156512');
-	TestOk(FCalc.GetResult <> vResult);
+	TestOk(FCalc.GetResult <> LResult);
 end;
 
 procedure TCalculationsSuite.TrigTest();

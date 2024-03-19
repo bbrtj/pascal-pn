@@ -19,19 +19,19 @@ type
 		FVariableMap: TVariableMap;
 		FCurrentStack: TPNStack;
 
-		procedure SetStack(vStack: TPNStack);
+		procedure SetStack(Stack: TPNStack);
 
 	public
 		constructor Create;
 		destructor Destroy; override;
 
-		procedure ImportString(const vExported: String);
+		procedure ImportString(const Exported: String);
 		function ExportString(): String;
 
-		procedure DefineVariable(const vVariable: String; vNumber: TNumber);
+		procedure DefineVariable(const Variable: String; Number: TNumber);
 		procedure ClearVariables();
 
-		procedure ParseString(const vInput: String);
+		procedure ParseString(const InputString: String);
 		function GetResult(): TNumber;
 
 		function Help(): String;
@@ -53,16 +53,16 @@ begin
 end;
 
 { Sets a new stack with extra care to free the old one }
-procedure TPN.SetStack(vStack: TPNStack);
+procedure TPN.SetStack(Stack: TPNStack);
 begin
 	FCurrentStack.Free;
-	FCurrentStack := vStack;
+	FCurrentStack := Stack;
 end;
 
 { Imports a string using TPNStack }
-procedure TPN.ImportString(const vExported: String);
+procedure TPN.ImportString(const Exported: String);
 begin
-	self.SetStack(TPNStack.FromString(vExported));
+	self.SetStack(TPNStack.FromString(Exported));
 end;
 
 { Exports a the TPNStack to a string }
@@ -72,9 +72,9 @@ begin
 end;
 
 { Defines a new variable for the calculations }
-procedure TPN.DefineVariable(const vVariable: String; vNumber: TNumber);
+procedure TPN.DefineVariable(const Variable: String; Number: TNumber);
 begin
-	FVariableMap.AddOrSetData(ParseVariable(vVariable), vNumber);
+	FVariableMap.AddOrSetData(ParseVariable(Variable), Number);
 end;
 
 { Removes all defined variables for the calculation }
@@ -84,9 +84,9 @@ begin
 end;
 
 { Parses a string via PNParser }
-procedure TPN.ParseString(const vInput: String);
+procedure TPN.ParseString(const InputString: String);
 begin
-	self.SetStack(Parse(vInput));
+	self.SetStack(Parse(InputString));
 end;
 
 { Calculates the result using PNCalculator }

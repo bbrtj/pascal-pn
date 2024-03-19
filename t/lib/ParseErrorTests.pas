@@ -13,7 +13,7 @@ type
 	private
 		FCalc: TPN;
 
-		procedure TestForException(const vInput: String; vClass: TErrorClass);
+		procedure TestForException(const InputString: String; ErrorClass: TErrorClass);
 	public
 		constructor Create(); override;
 
@@ -29,15 +29,15 @@ type
 
 implementation
 
-procedure TParseErrorSuite.TestForException(const vInput: String; vClass: TErrorClass);
+procedure TParseErrorSuite.TestForException(const InputString: String; ErrorClass: TErrorClass);
 begin
 	try
-		FCalc.ParseString(vInput);
+		FCalc.ParseString(InputString);
 		TestFail('no error at all');
 	except
 		on E: Exception do begin
 			Note('Exception message: ' + E.Message);
-			TestIs(E, vClass);
+			TestIs(E, ErrorClass);
 		end;
 	end;
 end;

@@ -54,12 +54,12 @@ type
 			SMap: TOperationInfoMap;
 
 	public
-		constructor Create(vName: TOperatorName; vOT: TOperationType; vOC: TOperationCategory; vPriority: Byte);
+		constructor Create(OperatorName: TOperatorName; OT: TOperationType; OC: TOperationCategory; Priority: Byte);
 
-		class function Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
-		class function Check(const vName: TOperatorName): Boolean;
-		class function LongestSymbolic(vOC: TOperationCategory): Byte;
-		class function Help(vFormatted: Boolean = True): String;
+		class function Find(const OperatorName: TOperatorName; OC: TOperationCategory): TOperationInfo;
+		class function Check(const OperatorName: TOperatorName): Boolean;
+		class function LongestSymbolic(OC: TOperationCategory): Byte;
+		class function Help(Formatted: Boolean = True): String;
 
 		property OperatorName: TOperatorName read FOperatorName;
 		property Priority: Byte read FPriority;
@@ -84,13 +84,13 @@ type
 	EUnmatchedBraces = class(EParsingFailed);
 	EInvalidVariableName = class(EParsingFailed);
 
-function MakeItem(vValue: TNumber): TItem;
-function MakeItem(const vValue: String): TItem;
-function MakeItem(const vValue: String; vType: TItemType): TItem;
-function MakeItem(const vValue: TVariableName): TItem;
-function MakeItem(const vValue: TOperatorName; vOT: TOperationCategory): TItem;
-function MakeItem(vOperation: TOperationInfo): TItem;
-function GetItemValue(const vItem: TItem): String;
+function MakeItem(Value: TNumber): TItem;
+function MakeItem(const Value: String): TItem;
+function MakeItem(const Value: String; ItemType: TItemType): TItem;
+function MakeItem(const Value: TVariableName): TItem;
+function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
+function MakeItem(Operation: TOperationInfo): TItem;
+function GetItemValue(const Item: TItem): String;
 
 implementation
 
@@ -127,146 +127,146 @@ const
 	);
 
 var
-	vFloatFormat: TFormatSettings;
+	GFloatFormat: TFormatSettings;
 
 { Creates TItem from TNumber }
-function MakeItem(vValue: TNumber): TItem;
+function MakeItem(Value: TNumber): TItem;
 begin
 	result.ItemType := itNumber;
-	result.Number := vValue;
+	result.Number := Value;
 end;
 
 { Creates TItem from TVariableName }
-function MakeItem(const vValue: TVariableName): TItem;
+function MakeItem(const Value: TVariableName): TItem;
 begin
 	result.ItemType := itVariable;
-	result.VariableName := vValue;
+	result.VariableName := Value;
 end;
 
 { Creates TItem from a string (guess) }
-function MakeItem(const vValue: String): TItem;
+function MakeItem(const Value: String): TItem;
 var
-	vNumericValue: TNumber;
+	LNumericValue: TNumber;
 begin
-	if TryStrToFloat(vValue, vNumericValue, vFloatFormat) then
-		result := MakeItem(vNumericValue)
-	else if IsValidIdent(vValue) then
-		result := MakeItem(TVariableName(vValue))
+	if TryStrToFloat(Value, LNumericValue, GFloatFormat) then
+		result := MakeItem(LNumericValue)
+	else if IsValidIdent(Value) then
+		result := MakeItem(TVariableName(Value))
 	else
-		raise Exception.Create('Invalid token ' + vValue);
+		raise Exception.Create('Invalid token ' + Value);
 end;
 
 { Creates TItem from a string (guess and check) }
-function MakeItem(const vValue: String; vType: TItemType): TItem;
+function MakeItem(const Value: String; ItemType: TItemType): TItem;
 begin
-	result := MakeItem(vValue);
-	if result.ItemType <> vType then
-		raise Exception.Create('Invalid token ' + vValue);
+	result := MakeItem(Value);
+	if result.ItemType <> ItemType then
+		raise Exception.Create('Invalid token ' + Value);
 end;
 
 { Creates TItem from TOperatorName }
-function MakeItem(const vValue: TOperatorName; vOT: TOperationCategory): TItem;
+function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
 begin
 	result.ItemType := itOperator;
-	result.Operation := TOperationInfo.Find(vValue, vOT);
+	result.Operation := TOperationInfo.Find(Value, OT);
 
 	if result.Operation = nil then
-		raise Exception.Create('Invalid token ' + vValue);
+		raise Exception.Create('Invalid token ' + Value);
 end;
 
 { creates TItem from TOperationInfo }
-function MakeItem(vOperation: TOperationInfo): TItem;
+function MakeItem(Operation: TOperationInfo): TItem;
 begin
 	result.ItemType := itOperator;
-	result.Operation := vOperation;
+	result.Operation := Operation;
 end;
 
-function GetItemValue(const vItem: TItem): String;
+function GetItemValue(const Item: TItem): String;
 begin
-	case vItem.ItemType of
-		itNumber: result := FloatToStr(vItem.Number, vFloatFormat);
-		itVariable: result := vItem.VariableName;
-		itOperator: result := vItem.Operation.OperatorName;
+	case Item.ItemType of
+		itNumber: result := FloatToStr(Item.Number, GFloatFormat);
+		itVariable: result := Item.VariableName;
+		itOperator: result := Item.Operation.OperatorName;
 	end;
 end;
 
-constructor TOperationInfo.Create(vName: TOperatorName; vOT: TOperationType; vOC: TOperationCategory; vPriority: Byte);
+constructor TOperationInfo.Create(OperatorName: TOperatorName; OT: TOperationType; OC: TOperationCategory; Priority: Byte);
 var
-	vChar: Char;
+	LChar: Char;
 begin
-	FOperatorName := vName;
-	FOperationType := vOT;
-	FOperationCategory := vOC;
-	FPriority := vPriority;
+	FOperatorName := OperatorName;
+	FOperationType := OT;
+	FOperationCategory := OC;
+	FPriority := Priority;
 
 	FSymbolic := True;
-	for vChar in vName do begin
-		if IsLetterOrDigit(vChar) or (vChar = '_') then begin
+	for LChar in OperatorName do begin
+		if IsLetterOrDigit(LChar) or (LChar = '_') then begin
 			FSymbolic := False;
 			break;
 		end;
 	end;
 end;
 
-class function TOperationInfo.Find(const vName: TOperatorName; vOC: TOperationCategory): TOperationInfo;
+class function TOperationInfo.Find(const OperatorName: TOperatorName; OC: TOperationCategory): TOperationInfo;
 var
-	vFound: Integer;
+	LFound: Integer;
 begin
-	if SMap[vOC].Find(vName, vFound) then
-		result := SMap[vOC].Data[vFound]
+	if SMap[OC].Find(OperatorName, LFound) then
+		result := SMap[OC].Data[LFound]
 	else
 		result := nil;
 end;
 
-class function TOperationInfo.Check(const vName: TOperatorName): Boolean;
+class function TOperationInfo.Check(const OperatorName: TOperatorName): Boolean;
 var
-	vInfo: TOperationInfo;
+	LInfo: TOperationInfo;
 begin
 	result := False;
-	for vInfo in SList do begin
-		if vInfo.FOperatorName = vName then
+	for LInfo in SList do begin
+		if LInfo.FOperatorName = OperatorName then
 			exit(True);
 	end;
 end;
 
-class function TOperationInfo.LongestSymbolic(vOC: TOperationCategory): Byte;
+class function TOperationInfo.LongestSymbolic(OC: TOperationCategory): Byte;
 var
-	vInfo: TOperationInfo;
+	LInfo: TOperationInfo;
 begin
 	result := 0;
-	for vInfo in SList do begin
-		if vInfo.FSymbolic and (vInfo.FOperationCategory = vOC) and (length(vInfo.FOperatorName) > result) then
-			result := length(vInfo.FOperatorName);
+	for LInfo in SList do begin
+		if LInfo.FSymbolic and (LInfo.FOperationCategory = OC) and (length(LInfo.FOperatorName) > result) then
+			result := length(LInfo.FOperatorName);
 	end;
 end;
 
-class function TOperationInfo.Help(vFormatted: Boolean = True): String;
+class function TOperationInfo.Help(Formatted: Boolean = True): String;
 var
-	vInfo: TOperationInfo;
-	vLongest: Byte;
+	LInfo: TOperationInfo;
+	LLongest: Byte;
 begin
-	vLongest := 0;
-	for vInfo in SList do begin
-		if length(vInfo.OperatorName) > vLongest then
-			vLongest := length(vInfo.OperatorName);
+	LLongest := 0;
+	for LInfo in SList do begin
+		if length(LInfo.OperatorName) > LLongest then
+			LLongest := length(LInfo.OperatorName);
 	end;
 
 	result := '';
-	for vInfo in SList do begin
-		if vFormatted then
-			result += Format('[ %-' + IntToStr(vLongest) + 's ]: ', [vInfo.OperatorName])
+	for LInfo in SList do begin
+		if Formatted then
+			result += Format('[ %-' + IntToStr(LLongest) + 's ]: ', [LInfo.OperatorName])
 		else
-			result += vInfo.OperatorName + ': ';
+			result += LInfo.OperatorName + ': ';
 
-		result += cOperationTypeDesc[vInfo.OperationType] + sLineBreak;
+		result += cOperationTypeDesc[LInfo.OperationType] + sLineBreak;
 	end;
 end;
 
 var
-	vInfo: TOperationInfo;
-	vOC: TOperationCategory;
+	GInfo: TOperationInfo;
+	GOC: TOperationCategory;
 initialization
-	vFloatFormat.DecimalSeparator := cDecimalSeparator;
+	GFloatFormat.DecimalSeparator := cDecimalSeparator;
 
 	TOperationInfo.SList := [
 		TOperationInfo.Create(',',       otSeparator,       ocInfix,   5),
@@ -303,21 +303,21 @@ initialization
 		TOperationInfo.Create('-',       otMinus,           ocPrefix,  255)
 	];
 
-	for vOC in TOperationCategory do begin
-		TOperationInfo.SMap[vOC] := TOperationInfo.TOperationMap.Create;
-		TOperationInfo.SMap[vOC].Sorted := True;
-		for vInfo in TOperationInfo.SList do begin
-			if (vInfo.OperationCategory = vOC) then
-				TOperationInfo.SMap[vOC].Add(vInfo.OperatorName, vInfo);
+	for GOC in TOperationCategory do begin
+		TOperationInfo.SMap[GOC] := TOperationInfo.TOperationMap.Create;
+		TOperationInfo.SMap[GOC].Sorted := True;
+		for GInfo in TOperationInfo.SList do begin
+			if (GInfo.OperationCategory = GOC) then
+				TOperationInfo.SMap[GOC].Add(GInfo.OperatorName, GInfo);
 		end;
 	end;
 
 finalization
-	for vInfo in TOperationInfo.SList do
-		vInfo.Free;
+	for GInfo in TOperationInfo.SList do
+		GInfo.Free;
 
-	for vOC in TOperationCategory do
-		TOperationInfo.SMap[vOC].Free;
+	for GOC in TOperationCategory do
+		TOperationInfo.SMap[GOC].Free;
 
 
 end.

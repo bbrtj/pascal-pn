@@ -12,279 +12,279 @@ uses
 	Math, SysUtils,
 	PNStack, PNBase;
 
-function Calculate(vMainStack: TPNStack; vVariables: TVariableMap): TNumber;
+function Calculate(MainStack: TPNStack; Variables: TVariableMap): TNumber;
 
 implementation
 
 { Get the next argument from the stack, raise an exception if not possible }
-function NextArg(vStack: TPNNumberStack): TNumber;
+function NextArg(Stack: TPNNumberStack): TNumber;
 begin
-	if vStack.Empty() then
+	if Stack.Empty() then
 		raise Exception.Create('Invalid Polish notation: stack is empty, cannot get operand');
 
-	result := vStack.Pop();
+	result := Stack.Pop();
 end;
 
 { Handler for separating , }
-function OpSeparator(vStack: TPNNumberStack): TNumber;
+function OpSeparator(Stack: TPNNumberStack): TNumber;
 begin
 	// this does nothing (as is should)
-	result := NextArg(vStack);
+	result := NextArg(Stack);
 end;
 
 { Handler for unary - }
-function OpMinus(vStack: TPNNumberStack): TNumber;
+function OpMinus(Stack: TPNNumberStack): TNumber;
 begin
-	result := -1 * NextArg(vStack);
+	result := -1 * NextArg(Stack);
 end;
 
 { Handler for function ln }
-function OpLogN(vStack: TPNNumberStack): TNumber;
+function OpLogN(Stack: TPNNumberStack): TNumber;
 begin
-	result := LnXP1(NextArg(vStack));
+	result := LnXP1(NextArg(Stack));
 end;
 
 { Handler for function log }
-function OpLog(vStack: TPNNumberStack): TNumber;
+function OpLog(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result := LogN(result, NextArg(vStack));
+	result := NextArg(Stack);
+	result := LogN(result, NextArg(Stack));
 end;
 
 { Handler for + }
-function OpAddition(vStack: TPNNumberStack): TNumber;
+function OpAddition(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result += NextArg(vStack);
+	result := NextArg(Stack);
+	result += NextArg(Stack);
 end;
 
 { Handler for - }
-function OpSubtraction(vStack: TPNNumberStack): TNumber;
+function OpSubtraction(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result -= NextArg(vStack);
+	result := NextArg(Stack);
+	result -= NextArg(Stack);
 end;
 
 { Handler for * }
-function OpMultiplication(vStack: TPNNumberStack): TNumber;
+function OpMultiplication(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result *= NextArg(vStack);
+	result := NextArg(Stack);
+	result *= NextArg(Stack);
 end;
 
 { Handler for / }
-function OpDivision(vStack: TPNNumberStack): TNumber;
+function OpDivision(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result /= NextArg(vStack);
+	result := NextArg(Stack);
+	result /= NextArg(Stack);
 end;
 
 { Handler for ^ }
-function OpPower(vStack: TPNNumberStack): TNumber;
+function OpPower(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result := result ** NextArg(vStack);
+	result := NextArg(Stack);
+	result := result ** NextArg(Stack);
 end;
 
 { Handler for % }
-function OpModulo(vStack: TPNNumberStack): TNumber;
+function OpModulo(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result := FMod(result, NextArg(vStack));
+	result := NextArg(Stack);
+	result := FMod(result, NextArg(Stack));
 end;
 
 { Handler for // }
-function OpDiv(vStack: TPNNumberStack): TNumber;
+function OpDiv(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack);
-	result := Floor(result / NextArg(vStack));
+	result := NextArg(Stack);
+	result := Floor(result / NextArg(Stack));
 end;
 
 { Handler for function sqrt }
-function OpSqrt(vStack: TPNNumberStack): TNumber;
+function OpSqrt(Stack: TPNNumberStack): TNumber;
 begin
-	result := NextArg(vStack) ** 0.5;
+	result := NextArg(Stack) ** 0.5;
 end;
 
 { Handler for function sin }
-function OpSin(vStack: TPNNumberStack): TNumber;
+function OpSin(Stack: TPNNumberStack): TNumber;
 begin
-	result := Sin(NextArg(vStack));
+	result := Sin(NextArg(Stack));
 end;
 
 { Handler for function cos }
-function OpCos(vStack: TPNNumberStack): TNumber;
+function OpCos(Stack: TPNNumberStack): TNumber;
 begin
-	result := Cos(NextArg(vStack));
+	result := Cos(NextArg(Stack));
 end;
 
 { Handler for function tan }
-function OpTan(vStack: TPNNumberStack): TNumber;
+function OpTan(Stack: TPNNumberStack): TNumber;
 begin
-	result := Tan(NextArg(vStack));
+	result := Tan(NextArg(Stack));
 end;
 
 { Handler for function cot }
-function OpCot(vStack: TPNNumberStack): TNumber;
+function OpCot(Stack: TPNNumberStack): TNumber;
 begin
-	result := Cotan(NextArg(vStack));
+	result := Cotan(NextArg(Stack));
 end;
 
 { Handler for function arcsin }
-function OpArcSin(vStack: TPNNumberStack): TNumber;
+function OpArcSin(Stack: TPNNumberStack): TNumber;
 begin
-	result := ArcSin(NextArg(vStack));
+	result := ArcSin(NextArg(Stack));
 end;
 
 { Handler for function arccos }
-function OpArcCos(vStack: TPNNumberStack): TNumber;
+function OpArcCos(Stack: TPNNumberStack): TNumber;
 begin
-	result := ArcCos(NextArg(vStack));
+	result := ArcCos(NextArg(Stack));
 end;
 
 { Handler for function rand }
 { Note: Randomization must be performed by program running the calculator }
-function OpRand(vStack: TPNNumberStack): TNumber;
+function OpRand(Stack: TPNNumberStack): TNumber;
 begin
-	result := Random(Floor(NextArg(vStack)));
+	result := Random(Floor(NextArg(Stack)));
 end;
 
 { Handler for function min }
-function OpMin(vStack: TPNNumberStack): TNumber;
+function OpMin(Stack: TPNNumberStack): TNumber;
 begin
-	result := Min(NextArg(vStack), NextArg(vStack));
+	result := Min(NextArg(Stack), NextArg(Stack));
 end;
 
 { Handler for function max }
-function OpMax(vStack: TPNNumberStack): TNumber;
+function OpMax(Stack: TPNNumberStack): TNumber;
 begin
-	result := Max(NextArg(vStack), NextArg(vStack));
+	result := Max(NextArg(Stack), NextArg(Stack));
 end;
 
 { Handler for function round }
-function OpRound(vStack: TPNNumberStack): TNumber;
+function OpRound(Stack: TPNNumberStack): TNumber;
 begin
-	result := Round(NextArg(vStack));
+	result := Round(NextArg(Stack));
 end;
 
 { Handler for function floor }
-function OpFloor(vStack: TPNNumberStack): TNumber;
+function OpFloor(Stack: TPNNumberStack): TNumber;
 begin
-	result := Floor(NextArg(vStack));
+	result := Floor(NextArg(Stack));
 end;
 
 { Handler for function ceil }
-function OpCeil(vStack: TPNNumberStack): TNumber;
+function OpCeil(Stack: TPNNumberStack): TNumber;
 begin
-	result := Ceil(NextArg(vStack));
+	result := Ceil(NextArg(Stack));
 end;
 
 { Handler for function sign }
-function OpSign(vStack: TPNNumberStack): TNumber;
+function OpSign(Stack: TPNNumberStack): TNumber;
 begin
-	result := Sign(NextArg(vStack));
+	result := Sign(NextArg(Stack));
 end;
 
 { Handler for function abs}
-function OpAbs(vStack: TPNNumberStack): TNumber;
+function OpAbs(Stack: TPNNumberStack): TNumber;
 begin
-	result := Abs(NextArg(vStack));
+	result := Abs(NextArg(Stack));
 end;
 
 { Handler for function fact }
-function OpFact(vStack: TPNNumberStack): TNumber;
+function OpFact(Stack: TPNNumberStack): TNumber;
 var
-	vInd: Int64;
+	LInd: Int64;
 begin
 	result := 1;
-	for vInd := 2 to Floor(NextArg(vStack)) do
-		result *= vInd;
+	for LInd := 2 to Floor(NextArg(Stack)) do
+		result *= LInd;
 end;
 
 { Handler for }
-function OpExp(vStack: TPNNumberStack): TNumber;
+function OpExp(Stack: TPNNumberStack): TNumber;
 begin
-	result := Exp(NextArg(vStack));
+	result := Exp(NextArg(Stack));
 end;
 
 { Apply handler }
-function ApplyOperation(vOp: TOperationInfo; vStack: TPNNumberStack): TNumber;
+function ApplyOperation(Op: TOperationInfo; Stack: TPNNumberStack): TNumber;
 begin
-	case vOp.OperationType of
-		otSeparator: result := OpSeparator(vStack);
-		otMinus: result := OpMinus(vStack);
-		otAddition: result := OpAddition(vStack);
-		otSubtraction: result := OpSubtraction(vStack);
-		otMultiplication: result := OpMultiplication(vStack);
-		otDivision: result := OpDivision(vStack);
-		otPower: result := OpPower(vStack);
-		otModulo: result := OpModulo(vStack);
-		otDiv: result := OpDiv(vStack);
-		otSqrt: result := OpSqrt(vStack);
-		otLogN: result := OpLogN(vStack);
-		otLog: result := OpLog(vStack);
-		otSin: result := OpSin(vStack);
-		otCos: result := OpCos(vStack);
-		otTan: result := OpTan(vStack);
-		otCot: result := OpCot(vStack);
-		otArcSin: result := OpArcSin(vStack);
-		otArcCos: result := OpArcCos(vStack);
-		otRand: result := OpRand(vStack);
-		otMin: result := OpMin(vStack);
-		otMax: result := OpMax(vStack);
-		otRound: result := OpRound(vStack);
-		otFloor: result := OpFloor(vStack);
-		otCeil: result := OpCeil(vStack);
-		otSign: result := OpSign(vStack);
-		otAbs: result := OpAbs(vStack);
-		otFact: result := OpFact(vStack);
-		otExp: result := OpExp(vStack);
+	case Op.OperationType of
+		otSeparator: result := OpSeparator(Stack);
+		otMinus: result := OpMinus(Stack);
+		otAddition: result := OpAddition(Stack);
+		otSubtraction: result := OpSubtraction(Stack);
+		otMultiplication: result := OpMultiplication(Stack);
+		otDivision: result := OpDivision(Stack);
+		otPower: result := OpPower(Stack);
+		otModulo: result := OpModulo(Stack);
+		otDiv: result := OpDiv(Stack);
+		otSqrt: result := OpSqrt(Stack);
+		otLogN: result := OpLogN(Stack);
+		otLog: result := OpLog(Stack);
+		otSin: result := OpSin(Stack);
+		otCos: result := OpCos(Stack);
+		otTan: result := OpTan(Stack);
+		otCot: result := OpCot(Stack);
+		otArcSin: result := OpArcSin(Stack);
+		otArcCos: result := OpArcCos(Stack);
+		otRand: result := OpRand(Stack);
+		otMin: result := OpMin(Stack);
+		otMax: result := OpMax(Stack);
+		otRound: result := OpRound(Stack);
+		otFloor: result := OpFloor(Stack);
+		otCeil: result := OpCeil(Stack);
+		otSign: result := OpSign(Stack);
+		otAbs: result := OpAbs(Stack);
+		otFact: result := OpFact(Stack);
+		otExp: result := OpExp(Stack);
 	end;
 end;
 
 { Tries to fetch a variable value from TVariableMap }
-function ResolveVariable(const vItem: TItem; vVariables: TVariableMap): TNumber;
+function ResolveVariable(const Item: TItem; Variables: TVariableMap): TNumber;
 begin
-	if not vVariables.TryGetData(vItem.VariableName, result) then
-		raise EUnknownVariable.Create('Variable ' + vItem.VariableName + ' was not defined');
+	if not Variables.TryGetData(Item.VariableName, result) then
+		raise EUnknownVariable.Create('Variable ' + Item.VariableName + ' was not defined');
 end;
 
 
 { Calculates a result from a Polish notation stack }
-function Calculate(vMainStack: TPNStack; vVariables: TVariableMap): TNumber;
+function Calculate(MainStack: TPNStack; Variables: TVariableMap): TNumber;
 var
-	vMainStackCopy: TPNStack;
-	vLocalStack: TPNNumberStack;
-	vItem: TItem;
+	MainStackCopy: TPNStack;
+	LLocalStack: TPNNumberStack;
+	LItem: TItem;
 
 begin
-	vLocalStack := TPNNumberStack.Create;
-	vMainStackCopy := TPNStack.Create;
+	LLocalStack := TPNNumberStack.Create;
+	MainStackCopy := TPNStack.Create;
 
 	try
 		// main calculation loop
-		while not vMainStack.Empty() do begin
-			vItem := vMainStack.Pop();
-			vMainStackCopy.Push(vItem);
+		while not MainStack.Empty() do begin
+			LItem := MainStack.Pop();
+			MainStackCopy.Push(LItem);
 
-			case vItem.ItemType of
-				itOperator: vLocalStack.Push(ApplyOperation(vItem.Operation, vLocalStack));
-				itVariable: vLocalStack.Push(ResolveVariable(vItem, vVariables));
-				itNumber: vLocalStack.Push(vItem.Number);
+			case LItem.ItemType of
+				itOperator: LLocalStack.Push(ApplyOperation(LItem.Operation, LLocalStack));
+				itVariable: LLocalStack.Push(ResolveVariable(LItem, Variables));
+				itNumber: LLocalStack.Push(LItem.Number);
 			end;
 		end;
 
-		result := vLocalStack.Pop();
+		result := LLocalStack.Pop();
 
-		if not vLocalStack.Empty then
+		if not LLocalStack.Empty then
 			raise EInvalidExpression.Create('Invalid expression');
 
 	finally
-		while not vMainStackCopy.Empty do
-			vMainStack.Push(vMainStackCopy.Pop);
+		while not MainStackCopy.Empty do
+			MainStack.Push(MainStackCopy.Pop);
 
-		vLocalStack.Free;
-		vMainStackCopy.Free;
+		LLocalStack.Free;
+		MainStackCopy.Free;
 	end;
 end;
 

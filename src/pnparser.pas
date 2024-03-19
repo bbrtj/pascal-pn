@@ -26,8 +26,8 @@ uses
 	Fgl, SysUtils, Character, Math,
 	PNTree, PNStack, PNBase;
 
-function Parse(const vParseInput: String): TPNStack;
-function ParseVariable(const vParseInput: String): String;
+function Parse(const ParseInput: String): TPNStack;
+function ParseVariable(const ParseInput: String): String;
 
 implementation
 
@@ -38,74 +38,74 @@ type
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
 var
-	vInput: UnicodeString;
-	vInputLength: UInt32;
-	vAt: UInt32;
-	vLongestOperator: Array [TOperationCategory] of UInt32;
-	vCleanup: TCleanupList;
+	GInput: UnicodeString;
+	GInputLength: UInt32;
+	GAt: UInt32;
+	GLongestOperator: Array [TOperationCategory] of UInt32;
+	GCleanup: TCleanupList;
 
-function ManagedNode(const vItem: TItem): TPNNode; Inline;
+function ManagedNode(const Item: TItem): TPNNode; Inline;
 begin
-	result := TPNNode.Create(vItem);
-	vCleanup.Add(result);
+	result := TPNNode.Create(Item);
+	GCleanup.Add(result);
 end;
 
-function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
+function ParseStatement(Flags: TStatementFlags = []): TPNNode;
 forward;
 
 function IsWithinInput(): Boolean; Inline;
 begin
-	result := vAt <= vInputLength;
+	result := GAt <= GInputLength;
 end;
 
 procedure SkipWhiteSpace(); Inline;
 begin
-	while IsWithinInput() and IsWhiteSpace(vInput[vAt]) do
-		inc(vAt);
+	while IsWithinInput() and IsWhiteSpace(GInput[GAt]) do
+		inc(GAt);
 end;
 
 function ParseWord(): Boolean;
 begin
-	if not (IsWithinInput() and (IsLetter(vInput[vAt]) or (vInput[vAt] = '_'))) then
+	if not (IsWithinInput() and (IsLetter(GInput[GAt]) or (GInput[GAt] = '_'))) then
 		exit(False);
 
 	repeat
-		inc(vAt);
-	until not (IsWithinInput() and (IsLetterOrDigit(vInput[vAt]) or (vInput[vAt] = '_')));
+		inc(GAt);
+	until not (IsWithinInput() and (IsLetterOrDigit(GInput[GAt]) or (GInput[GAt] = '_')));
 
 	result := True;
 end;
 
-function ParseOp(vOC: TOperationCategory): TPNNode;
+function ParseOp(OC: TOperationCategory): TPNNode;
 var
-	vLen: UInt32;
-	vOp: TOperatorName;
-	vOpInfo: TOperationInfo;
+	LLen: UInt32;
+	LOp: TOperatorName;
+	LOpInfo: TOperationInfo;
 begin
 	SkipWhiteSpace;
 
 	// word operator
-	vLen := vAt;
+	LLen := GAt;
 	if ParseWord() then begin
 		result := nil;
 
-		vOp := copy(vInput, vLen, vAt - vLen);
-		vOpInfo := TOperationInfo.Find(vOp, vOC);
-		if vOpInfo <> nil then
-			result := ManagedNode(MakeItem(vOpInfo));
+		LOp := copy(GInput, LLen, GAt - LLen);
+		LOpInfo := TOperationInfo.Find(LOp, OC);
+		if LOpInfo <> nil then
+			result := ManagedNode(MakeItem(LOpInfo));
 
 		exit(result);
 	end;
 
 	// symbolic operator
-	vLen := vInputLength - vAt + 1;
+	LLen := GInputLength - GAt + 1;
 	result := nil;
-	for vLen := Min(vLen, vLongestOperator[vOC]) downto 1 do begin
-		vOp := copy(vInput, vAt, vLen);
-		vOpInfo := TOperationInfo.Find(vOp, vOC);
-		if vOpInfo <> nil then begin
-			result := ManagedNode(MakeItem(vOpInfo));
-			vAt := vAt + vLen;
+	for LLen := Min(LLen, GLongestOperator[OC]) downto 1 do begin
+		LOp := copy(GInput, GAt, LLen);
+		LOpInfo := TOperationInfo.Find(LOp, OC);
+		if LOpInfo <> nil then begin
+			result := ManagedNode(MakeItem(LOpInfo));
+			GAt := GAt + LLen;
 			break;
 		end;
 	end;
@@ -124,9 +124,9 @@ end;
 function ParseOpeningBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (vInput[vAt] = '(');
+	result := IsWithinInput() and (GInput[GAt] = '(');
 	if result then begin
-		inc(vAt);
+		inc(GAt);
 		SkipWhiteSpace();
 	end;
 end;
@@ -134,160 +134,160 @@ end;
 function ParseClosingBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (vInput[vAt] = ')');
+	result := IsWithinInput() and (GInput[GAt] = ')');
 	if result then begin
-		inc(vAt);
+		inc(GAt);
 		SkipWhiteSpace();
 	end;
 end;
 
 function ParseNumber(): TPNNode;
 var
-	vStart: UInt32;
-	vHadPoint: Boolean;
-	vNumberStringified: String;
+	LStart: UInt32;
+	LHadPoint: Boolean;
+	LNumberStringified: String;
 begin
 	SkipWhiteSpace();
 
-	vStart := vAt;
-	if not (IsWithinInput() and IsDigit(vInput[vAt])) then
+	LStart := GAt;
+	if not (IsWithinInput() and IsDigit(GInput[GAt])) then
 		exit(nil);
 
-	vHadPoint := False;
+	LHadPoint := False;
 	repeat
-		if vInput[vAt] = cDecimalSeparator then begin
-			if vHadPoint then exit(nil);
-			vHadPoint := True;
+		if GInput[GAt] = cDecimalSeparator then begin
+			if LHadPoint then exit(nil);
+			LHadPoint := True;
 		end;
-		inc(vAt);
-	until not (IsWithinInput() and (IsDigit(vInput[vAt]) or (vInput[vAt] = cDecimalSeparator)));
+		inc(GAt);
+	until not (IsWithinInput() and (IsDigit(GInput[GAt]) or (GInput[GAt] = cDecimalSeparator)));
 
-	vNumberStringified := copy(vInput, vStart, vAt - vStart);
-	result := ManagedNode(MakeItem(vNumberStringified));
+	LNumberStringified := copy(GInput, LStart, GAt - LStart);
+	result := ManagedNode(MakeItem(LNumberStringified));
 
 	SkipWhiteSpace();
 end;
 
 function ParseVariableName(): TPNNode;
 var
-	vStart: UInt32;
-	vVarName: TVariableName;
+	LStart: UInt32;
+	LVarName: TVariableName;
 begin
 	SkipWhiteSpace();
 
-	vStart := vAt;
+	LStart := GAt;
 	if not ParseWord() then exit(nil);
-	vVarName := copy(vInput, vStart, vAt - vStart);
+	LVarName := copy(GInput, LStart, GAt - LStart);
 
-	if TOperationInfo.Check(vVarName) then
+	if TOperationInfo.Check(LVarName) then
 		exit(nil);
 
-	result := ManagedNode(MakeItem(vVarName));
+	result := ManagedNode(MakeItem(LVarName));
 
 	SkipWhiteSpace();
 end;
 
 function ParseBlock(): TPNNode;
 var
-	vAtBacktrack: UInt32;
+	GAtBacktrack: UInt32;
 begin
-	vAtBacktrack := vAt;
+	GAtBacktrack := GAt;
 
 	if ParseOpeningBrace() then begin
 		result := ParseStatement();
 		if result = nil then
-			raise EInvalidStatement.Create('Invalid statement at offset ' + IntToStr(vAt));
+			raise EInvalidStatement.Create('Invalid statement at offset ' + IntToStr(GAt));
 		if not ParseClosingBrace() then
-			raise EUnmatchedBraces.Create('Missing braces at offset ' + IntToStr(vAt));
+			raise EUnmatchedBraces.Create('Missing braces at offset ' + IntToStr(GAt));
 
 		// mark result with higher precedendce as it is in block
 		result.Grouped := True;
 		exit(result);
 	end;
 
-	vAt := vAtBacktrack;
+	GAt := GAtBacktrack;
 	result := nil;
 end;
 
 function ParseOperation(): TPNNode;
 var
-	vPartialResult, vOp, vFirst: TPNNode;
-	vAtBacktrack: UInt32;
+	LPartialResult, LOp, LFirst: TPNNode;
+	GAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
-		result := vPartialResult <> nil;
+		result := LPartialResult <> nil;
 
 		// backtrack
 		if not result then
-			vAt := vAtBacktrack;
+			GAt := GAtBacktrack;
 	end;
 
-	function IsLowerPriority(vCompare, vAgainst: TPNNode): Boolean; Inline;
+	function IsLowerPriority(Compare, Against: TPNNode): Boolean; Inline;
 	begin
-		result := (vCompare <> nil) and vCompare.IsOperation and (not vCompare.Grouped)
-			and (vCompare.OperationPriority <= vAgainst.OperationPriority);
+		result := (Compare <> nil) and Compare.IsOperation and (not Compare.Grouped)
+			and (Compare.OperationPriority <= Against.OperationPriority);
 	end;
 
-	function IsLeftGrouped(vCompare: TPNNode): Boolean; Inline;
+	function IsLeftGrouped(Compare: TPNNode): Boolean; Inline;
 	begin
-		result := (vCompare <> nil) and vCompare.IsOperation and (not vCompare.Grouped)
-			and (vCompare.Left <> nil) and vCompare.Left.Grouped;
+		result := (Compare <> nil) and Compare.IsOperation and (not Compare.Grouped)
+			and (Compare.Left <> nil) and Compare.Left.Grouped;
 	end;
 
 begin
-	vAtBacktrack := vAt;
+	GAtBacktrack := GAt;
 
-	vPartialResult := ParsePrefixOp();
+	LPartialResult := ParsePrefixOp();
 	if Success then begin
-		vOp := vPartialResult;
-		vPartialResult := ParseStatement();
+		LOp := LPartialResult;
+		LPartialResult := ParseStatement();
 		if Success then begin
-			vOp.Right := vPartialResult;
+			LOp.Right := LPartialResult;
 
-			// check if vPartialResult is an operator (for precedence)
+			// check if LPartialResult is an operator (for precedence)
 			// (must descent to find leftmost operator which has a left part)
 			// (also do it if the left item is grouped while the entire statement is not)
-			if IsLeftGrouped(vPartialResult) or
-				(IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil)) then begin
-				while IsLowerPriority(vPartialResult.Left, vOp)
-					and (vPartialResult.Left.Left <> nil) do
-					vPartialResult := vPartialResult.Left;
-				result := vOp.Right;
-				vOp.Right := vPartialResult.Left;
-				vPartialResult.Left := vOp;
+			if IsLeftGrouped(LPartialResult) or
+				(IsLowerPriority(LPartialResult, LOp) and (LPartialResult.Left <> nil)) then begin
+				while IsLowerPriority(LPartialResult.Left, LOp)
+					and (LPartialResult.Left.Left <> nil) do
+					LPartialResult := LPartialResult.Left;
+				result := LOp.Right;
+				LOp.Right := LPartialResult.Left;
+				LPartialResult.Left := LOp;
 			end
 			else
-				result := vOp;
+				result := LOp;
 
 			exit(result);
 		end;
 	end;
 
-	vPartialResult := ParseStatement([sfNotOperation]);
+	LPartialResult := ParseStatement([sfNotOperation]);
 	if Success then begin
-		vFirst := vPartialResult;
-		vPartialResult := ParseInfixOp();
+		LFirst := LPartialResult;
+		LPartialResult := ParseInfixOp();
 		if Success then begin
-			vOp := vPartialResult;
-			vPartialResult := ParseStatement();
+			LOp := LPartialResult;
+			LPartialResult := ParseStatement();
 			if Success then begin
 				// No need to check for precedence on left argument, as we
 				// parse left to right (sfNotOperation on first)
-				vOp.Left := vFirst;
-				vOp.Right := vPartialResult;
+				LOp.Left := LFirst;
+				LOp.Right := LPartialResult;
 
-				// check if vPartialResult is an operator (for precedence)
+				// check if LPartialResult is an operator (for precedence)
 				// (must descent to find leftmost operator)
-				if IsLowerPriority(vPartialResult, vOp) and (vPartialResult.Left <> nil) then begin
-					while IsLowerPriority(vPartialResult.Left, vOp) do
-						vPartialResult := vPartialResult.Left;
-					result := vOp.Right;
-					vOp.Right := vPartialResult.Left;
-					vPartialResult.Left := vOp;
+				if IsLowerPriority(LPartialResult, LOp) and (LPartialResult.Left <> nil) then begin
+					while IsLowerPriority(LPartialResult.Left, LOp) do
+						LPartialResult := LPartialResult.Left;
+					result := LOp.Right;
+					LOp.Right := LPartialResult.Left;
+					LPartialResult.Left := LOp;
 				end
 				else
-					result := vOp;
+					result := LOp;
 
 				exit(result);
 			end;
@@ -299,114 +299,114 @@ end;
 
 function ParseOperand(): TPNNode;
 var
-	vPartialResult: TPNNode;
-	vAtBacktrack: UInt32;
+	LPartialResult: TPNNode;
+	GAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
-		result := vPartialResult <> nil;
+		result := LPartialResult <> nil;
 
 		// backtrack
 		if not result then
-			vAt := vAtBacktrack;
+			GAt := GAtBacktrack;
 	end;
 
 begin
-	vAtBacktrack := vAt;
+	GAtBacktrack := GAt;
 
-	vPartialResult := ParseNumber();
-	if Success then exit(vPartialResult);
+	LPartialResult := ParseNumber();
+	if Success then exit(LPartialResult);
 
-	vPartialResult := ParseVariableName();
-	if Success then exit(vPartialResult);
+	LPartialResult := ParseVariableName();
+	if Success then exit(LPartialResult);
 
 	result := nil;
 end;
 
-function ParseStatement(vFlags: TStatementFlags = []): TPNNode;
+function ParseStatement(Flags: TStatementFlags = []): TPNNode;
 var
-	vPartialResult: TPNNode;
-	vAtBacktrack: UInt32;
+	LPartialResult: TPNNode;
+	GAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
-		result := (vPartialResult <> nil) and ((not (sfFull in vFlags)) or (vAt > vInputLength));
+		result := (LPartialResult <> nil) and ((not (sfFull in Flags)) or (GAt > GInputLength));
 
 		// backtrack
 		if not result then
-			vAt := vAtBacktrack;
+			GAt := GAtBacktrack;
 	end;
 
 begin
-	vAtBacktrack := vAt;
+	GAtBacktrack := GAt;
 
-	if not (sfNotOperation in vFlags) then begin
-		vPartialResult := ParseOperation();
-		if Success then exit(vPartialResult);
+	if not (sfNotOperation in Flags) then begin
+		LPartialResult := ParseOperation();
+		if Success then exit(LPartialResult);
 	end;
 
-	vPartialResult := ParseBlock();
-	if Success then exit(vPartialResult);
+	LPartialResult := ParseBlock();
+	if Success then exit(LPartialResult);
 
 	// operand last, as it is a part of an operation
-	vPartialResult := ParseOperand();
-	if Success then exit(vPartialResult);
+	LPartialResult := ParseOperand();
+	if Success then exit(LPartialResult);
 
 	result := nil;
 end;
 
 { Parses the entire calculation }
-function Parse(const vParseInput: String): TPNStack;
+function Parse(const ParseInput: String): TPNStack;
 var
-	vNode: TPNNode;
+	LNode: TPNNode;
 begin
-	vCleanup := TCleanupList.Create;
-	vInput := UnicodeString(vParseInput);
-	vInputLength := length(vInput);
-	vAt := 1;
+	GCleanup := TCleanupList.Create;
+	GInput := UnicodeString(ParseInput);
+	GInputLength := length(GInput);
+	GAt := 1;
 
 	try
-		vNode := ParseStatement([sfFull]);
-		if vNode = nil then
+		LNode := ParseStatement([sfFull]);
+		if LNode = nil then
 			raise EParsingFailed.Create('Couldn''t parse the calculation');
 
 		result := TPNStack.Create;
-		while vNode <> nil do begin
-			result.Push(vNode.Item);
-			vNode := vNode.NextPreorder();
+		while LNode <> nil do begin
+			result.Push(LNode.Item);
+			LNode := LNode.NextPreorder();
 		end;
 
 	finally
-		vCleanup.Free;
+		GCleanup.Free;
 	end;
 end;
 
 { Parses one variable name }
-function ParseVariable(const vParseInput: String): String;
+function ParseVariable(const ParseInput: String): String;
 var
-	vNode: TPNNode;
+	LNode: TPNNode;
 begin
-	vCleanup := TCleanupList.Create;
-	vInput := UnicodeString(vParseInput);
-	vInputLength := length(vInput);
-	vAt := 1;
+	GCleanup := TCleanupList.Create;
+	GInput := UnicodeString(ParseInput);
+	GInputLength := length(GInput);
+	GAt := 1;
 
 	try
-		vNode := ParseVariableName;
+		LNode := ParseVariableName;
 
-		if not((vNode <> nil) and (vAt > vInputLength)) then
-			raise EInvalidVariableName.Create('Invalid variable name ' + vInput);
+		if not((LNode <> nil) and (GAt > GInputLength)) then
+			raise EInvalidVariableName.Create('Invalid variable name ' + GInput);
 
-		result := vNode.Item.VariableName;
+		result := LNode.Item.VariableName;
 	finally
-		vCleanup.Free;
+		GCleanup.Free;
 	end;
 end;
 
 var
-	vOC: TOperationCategory;
+	LOC: TOperationCategory;
 initialization
-	for vOC in TOperationCategory do
-		vLongestOperator[vOC] := TOperationInfo.LongestSymbolic(vOC);
+	for LOC in TOperationCategory do
+		GLongestOperator[LOC] := TOperationInfo.LongestSymbolic(LOC);
 end.
 
