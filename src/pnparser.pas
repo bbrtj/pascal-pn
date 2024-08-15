@@ -189,9 +189,9 @@ end;
 
 function ParseBlock(): TPNNode;
 var
-	GAtBacktrack: UInt32;
+	LAtBacktrack: UInt32;
 begin
-	GAtBacktrack := GAt;
+	LAtBacktrack := GAt;
 
 	if ParseOpeningBrace() then begin
 		result := ParseStatement();
@@ -205,14 +205,14 @@ begin
 		exit(result);
 	end;
 
-	GAt := GAtBacktrack;
+	GAt := LAtBacktrack;
 	result := nil;
 end;
 
 function ParseOperation(): TPNNode;
 var
 	LPartialResult, LOp, LFirst: TPNNode;
-	GAtBacktrack: UInt32;
+	LAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
@@ -220,7 +220,7 @@ var
 
 		// backtrack
 		if not result then
-			GAt := GAtBacktrack;
+			GAt := LAtBacktrack;
 	end;
 
 	function IsLowerPriority(Compare, Against: TPNNode): Boolean; Inline;
@@ -236,7 +236,7 @@ var
 	end;
 
 begin
-	GAtBacktrack := GAt;
+	LAtBacktrack := GAt;
 
 	LPartialResult := ParsePrefixOp();
 	if Success then begin
@@ -300,7 +300,7 @@ end;
 function ParseOperand(): TPNNode;
 var
 	LPartialResult: TPNNode;
-	GAtBacktrack: UInt32;
+	LAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
@@ -308,11 +308,11 @@ var
 
 		// backtrack
 		if not result then
-			GAt := GAtBacktrack;
+			GAt := LAtBacktrack;
 	end;
 
 begin
-	GAtBacktrack := GAt;
+	LAtBacktrack := GAt;
 
 	LPartialResult := ParseNumber();
 	if Success then exit(LPartialResult);
@@ -326,7 +326,7 @@ end;
 function ParseStatement(Flags: TStatementFlags = []): TPNNode;
 var
 	LPartialResult: TPNNode;
-	GAtBacktrack: UInt32;
+	LAtBacktrack: UInt32;
 
 	function Success(): Boolean;
 	begin
@@ -334,11 +334,11 @@ var
 
 		// backtrack
 		if not result then
-			GAt := GAtBacktrack;
+			GAt := LAtBacktrack;
 	end;
 
 begin
-	GAtBacktrack := GAt;
+	LAtBacktrack := GAt;
 
 	if not (sfNotOperation in Flags) then begin
 		LPartialResult := ParseOperation();

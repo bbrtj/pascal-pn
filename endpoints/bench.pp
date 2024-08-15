@@ -6,20 +6,20 @@ uses
 	SysUtils, PN;
 
 var
-	vCalc: TPN;
-	vVar: Int64;
-	vTotal: Double;
+	Calc: TPN;
+	Variable: Int64;
+	Total: Double;
 
 begin
-	vTotal := 0;
-	for vVar := 1 to 20 * 30 * 20 do begin
-		vCalc := TPN.Create;
-		vCalc.ParseString('2 + 3 / 5 * var1 ^ 4 - (8 - 16 * 32 + (51 * 49))');
-		vCalc.DefineVariable('var1', vVar);
-		vTotal += vCalc.GetResult();
-		vCalc.Free;
+	Total := 0;
+	for Variable := 1 to 20 * 30 * 20 do begin
+		Calc := TPN.Create;
+		Calc.ParseString('2 + 3 / 5 * var1 ^ 4 - (8 - 16 * 32 + (51 * 49))');
+		Calc.DefineVariable('var1', Variable);
+		Total += Calc.GetResult();
+		Calc.Free;
 	end;
 
-	writeln(vTotal);
+	writeln(Total);
 end.
 
