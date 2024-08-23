@@ -35,6 +35,7 @@ type
 
 		function ToString(): String; override;
 		class function FromString(const InputString: String): TPNStack;
+		function ToArray(): TItemArray;
 	end;
 
 	TPNNumberStack = class(TPNBaseStack)
@@ -160,6 +161,19 @@ begin
 	end;
 
 	result := LStack;
+end;
+
+function TPNStack.ToArray(): TItemArray;
+var
+	I: Integer;
+begin
+	SetLength(result, self.Count);
+
+	I := 0;
+	while not self.Empty do begin
+		result[I] := self.Pop;
+		Inc(I);
+	end;
 end;
 
 { Pushes on top of the stack }

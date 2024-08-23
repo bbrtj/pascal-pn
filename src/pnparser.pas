@@ -44,8 +44,9 @@ var
 	GLongestOperator: Array [TOperationCategory] of UInt32;
 	GCleanup: TCleanupList;
 
-function ManagedNode(const Item: TItem): TPNNode; Inline;
+function ManagedNode(Item: TItem; FoundAt: Integer): TPNNode; Inline;
 begin
+	Item.ParsedAt := FoundAt;
 	result := TPNNode.Create(Item);
 	GCleanup.Add(result);
 end;
@@ -92,7 +93,7 @@ begin
 		LOp := copy(GInput, LLen, GAt - LLen);
 		LOpInfo := TOperationInfo.Find(LOp, OC);
 		if LOpInfo <> nil then
-			result := ManagedNode(MakeItem(LOpInfo));
+			result := ManagedNode(MakeItem(LOpInfo), LLen);
 
 		exit(result);
 	end;
@@ -104,7 +105,7 @@ begin
 		LOp := copy(GInput, GAt, LLen);
 		LOpInfo := TOperationInfo.Find(LOp, OC);
 		if LOpInfo <> nil then begin
-			result := ManagedNode(MakeItem(LOpInfo));
+			result := ManagedNode(MakeItem(LOpInfo), GAt);
 			GAt := GAt + LLen;
 			break;
 		end;
@@ -163,7 +164,7 @@ begin
 	until not (IsWithinInput() and (IsDigit(GInput[GAt]) or (GInput[GAt] = cDecimalSeparator)));
 
 	LNumberStringified := copy(GInput, LStart, GAt - LStart);
-	result := ManagedNode(MakeItem(LNumberStringified));
+	result := ManagedNode(MakeItem(LNumberStringified), LStart);
 
 	SkipWhiteSpace();
 end;
@@ -182,7 +183,7 @@ begin
 	if TOperationInfo.Check(LVarName) then
 		exit(nil);
 
-	result := ManagedNode(MakeItem(LVarName));
+	result := ManagedNode(MakeItem(LVarName), LStart);
 
 	SkipWhiteSpace();
 end;

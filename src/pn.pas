@@ -36,6 +36,7 @@ type
 
 		function Help(): String;
 
+		property Stack: TPNStack read FCurrentStack;
 	end;
 
 implementation
