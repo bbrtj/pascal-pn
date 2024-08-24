@@ -69,7 +69,7 @@ type
 
 	TItemType = (itNumber, itVariable, itOperator);
 	TItem = record
-		ParsedAt: Integer;
+		ParsedAt: UInt32;
 		case ItemType: TItemType of
 			itNumber: (Number: TNumber);
 			itVariable: (VariableName: TVariableName);
@@ -93,6 +93,7 @@ function MakeItem(const Value: String; ItemType: TItemType): TItem;
 function MakeItem(const Value: TVariableName): TItem;
 function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
 function MakeItem(Operation: TOperationInfo): TItem;
+
 function GetItemValue(const Item: TItem): String;
 
 implementation
@@ -272,6 +273,7 @@ end;
 var
 	GInfo: TOperationInfo;
 	GOC: TOperationCategory;
+
 initialization
 	GFloatFormat.DecimalSeparator := cDecimalSeparator;
 

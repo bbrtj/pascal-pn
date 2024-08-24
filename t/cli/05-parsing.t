@@ -29,6 +29,8 @@ subtest 'single context' => sub {
 
 subtest 'nested contexts' => sub {
 	for my $case (
+		['--1', 'p-#p-#1'],
+		['2*-1', 'o*#2#p-#1'],
 		['-(-2 + 3)', 'p-#o+#p-#2#3'],
 		['-ln 5 + 3', 'p-#pln#o+#5#3'],
 		['-log 2, log 2, 16', 'p-#plog#o,#2#plog#o,#2#16'],
@@ -56,6 +58,7 @@ subtest 'invalid examples' => sub {
 		'this - is * )test', # unmatched braces
 		'2 2+2', # unexpected 2
 		'2+2 2', # unexpected 2
+		'-*2', # not an unary operator
 	) {
 		run_bad('-p', $case, '-e');
 	}

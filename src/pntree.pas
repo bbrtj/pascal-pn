@@ -12,8 +12,6 @@ uses
 	PNBase;
 
 type
-	PPNNode = ^TPNNode;
-
 	TPNNode = class
 	strict private
 		FItem: TItem;
@@ -28,7 +26,6 @@ type
 	public
 		constructor Create(const Item: TItem);
 
-		procedure FreeRecursively();
 		function IsOperation(): Boolean;
 		function OperationPriority(): Byte;
 		function OperationType(): TOperationType;
@@ -44,7 +41,10 @@ type
 
 implementation
 
-{}
+{
+	Node is not freed in the destructor recursively because its nodes are
+	managed by the parser
+}
 constructor TPNNode.Create(const Item: TItem);
 begin
 	FItem := Item;
@@ -52,12 +52,6 @@ begin
 	FLeft := nil;
 	FRight := nil;
 	FParent := nil;
-end;
-
-procedure TPNNode.FreeRecursively();
-begin
-	FLeft.Free();
-	FRight.Free();
 end;
 
 { Set the left node (plus its parent) }
@@ -98,7 +92,6 @@ function TPNNode.OperationType(): TOperationType;
 begin
 	result := FItem.Operation.OperationType;
 end;
-
 
 { Traverse the tree Preorder }
 function TPNNode.NextPreorder(): TPNNode;

@@ -34,7 +34,7 @@ implementation
 type
 	TStatementFlag = (sfFull, sfNotOperation);
 	TStatementFlags = set of TStatementFlag;
-	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctSymbol);
+	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctDecimalSeparator, ctBrace, ctSymbol);
 
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
@@ -42,7 +42,6 @@ var
 	GInput: UnicodeString;
 	GInputLength: UInt32;
 	GAt: UInt32;
-	GLongestOperator: Array [TOperationCategory] of UInt32;
 	GCleanup: TCleanupList;
 	GCharacterTypes: Array of TCharacterType;
 
@@ -52,7 +51,7 @@ var
 begin
 	GCleanup := TCleanupList.Create;
 	GInput := UnicodeString(ParseInput);
-	GInputLength := length(GInput);
+	GInputLength := Length(GInput);
 	GAt := 1;
 
 	SetLength(GCharacterTypes, GInputLength);
@@ -63,6 +62,10 @@ begin
 			GCharacterTypes[I] := ctLetter
 		else if IsDigit(GInput[I + 1]) then
 			GCharacterTypes[I] := ctDigit
+		else if GInput[I + 1] = cDecimalSeparator then
+			GCharacterTypes[I] := ctDecimalSeparator
+		else if (GInput[I + 1] = '(') or (GInput[I + 1] = ')') then
+			GCharacterTypes[I] := ctBrace
 		else
 			GCharacterTypes[I] := ctSymbol
 		;
@@ -112,39 +115,45 @@ begin
 	result := True;
 end;
 
+function ParseSymbol(): Boolean;
+begin
+	if not (IsWithinInput() and (CharacterType(GAt) = ctSymbol)) then
+		exit(False);
+
+	repeat
+		inc(GAt);
+	until not (IsWithinInput() and (CharacterType(GAt) = ctSymbol));
+
+	result := True;
+end;
+
 function ParseOp(OC: TOperationCategory): TPNNode;
 var
-	LLen: UInt32;
-	LOp: TOperatorName;
+	LSymbol: Boolean;
+	LStart: UInt32;
 	LOpInfo: TOperationInfo;
 begin
 	SkipWhiteSpace;
-
-	// word operator
-	LLen := GAt;
-	if ParseWord() then begin
-		result := nil;
-
-		LOp := copy(GInput, LLen, GAt - LLen);
-		LOpInfo := TOperationInfo.Find(LOp, OC);
-		if LOpInfo <> nil then
-			result := ManagedNode(MakeItem(LOpInfo), LLen);
-
-		exit(result);
-	end;
-
-	// symbolic operator
-	LLen := GInputLength - GAt + 1;
 	result := nil;
-	for LLen := Min(LLen, GLongestOperator[OC]) downto 1 do begin
-		LOp := copy(GInput, GAt, LLen);
-		LOpInfo := TOperationInfo.Find(LOp, OC);
-		if LOpInfo <> nil then begin
-			result := ManagedNode(MakeItem(LOpInfo), GAt);
-			GAt := GAt + LLen;
-			break;
+	LStart := GAt;
+
+	// word operator or symbolic operator
+	LSymbol := not ParseWord;
+	if LSymbol and not ParseSymbol() then exit;
+
+	LOpInfo := TOperationInfo.Find(copy(GInput, LStart, GAt - LStart), OC);
+
+	if (LOpInfo = nil) and LSymbol then begin
+		// extra treatment for symbols (because of cases like *-)
+		while GAt > LStart do begin
+			Dec(GAt);
+			LOpInfo := TOperationInfo.Find(copy(GInput, LStart, GAt - LStart), OC);
+			if LOpInfo <> nil then break;
 		end;
 	end;
+
+	if LOpInfo <> nil then
+		result := ManagedNode(MakeItem(LOpInfo), LStart);
 end;
 
 function ParsePrefixOp(): TPNNode; Inline;
@@ -160,7 +169,7 @@ end;
 function ParseOpeningBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (GInput[GAt] = '(');
+	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = '(');
 	if result then begin
 		inc(GAt);
 		SkipWhiteSpace();
@@ -170,7 +179,7 @@ end;
 function ParseClosingBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (GInput[GAt] = ')');
+	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = ')');
 	if result then begin
 		inc(GAt);
 		SkipWhiteSpace();
@@ -180,26 +189,23 @@ end;
 function ParseNumber(): TPNNode;
 var
 	LStart: UInt32;
-	LHadPoint: Boolean;
-	LNumberStringified: String;
 begin
 	SkipWhiteSpace();
+	result := nil;
 
 	LStart := GAt;
-	if not (IsWithinInput() and (CharacterType(GAt) = ctDigit)) then
-		exit(nil);
-
-	LHadPoint := False;
-	repeat
-		if GInput[GAt] = cDecimalSeparator then begin
-			if LHadPoint then exit(nil);
-			LHadPoint := True;
-		end;
+	while IsWithinInput() and (CharacterType(GAt) = ctDigit) do
 		inc(GAt);
-	until not (IsWithinInput() and ((CharacterType(GAt) = ctDigit) or (GInput[GAt] = cDecimalSeparator)));
 
-	LNumberStringified := copy(GInput, LStart, GAt - LStart);
-	result := ManagedNode(MakeItem(LNumberStringified), LStart);
+	if GAt = LStart then exit;
+	if IsWithinInput() and (CharacterType(GAt) = ctDecimalSeparator) then begin
+		inc(GAt);
+
+		while IsWithinInput() and (CharacterType(GAt) = ctDigit) do
+			inc(GAt);
+	end;
+
+	result := ManagedNode(MakeItem(copy(GInput, LStart, GAt - LStart)), LStart);
 
 	SkipWhiteSpace();
 end;
@@ -213,10 +219,10 @@ begin
 
 	LStart := GAt;
 	if not ParseWord() then exit(nil);
-	LVarName := copy(GInput, LStart, GAt - LStart);
 
+	LVarName := copy(GInput, LStart, GAt - LStart);
 	if TOperationInfo.Check(LVarName) then
-		exit(nil);
+		raise EInvalidVariableName.Create('Operator found where variable was expected: ' + result.Item.VariableName);
 
 	result := ManagedNode(MakeItem(LVarName), LStart);
 
@@ -250,7 +256,7 @@ var
 	LPartialResult, LOp, LFirst: TPNNode;
 	LAtBacktrack: UInt32;
 
-	function Success(): Boolean;
+	function Success(): Boolean; Inline;
 	begin
 		result := LPartialResult <> nil;
 
@@ -338,7 +344,7 @@ var
 	LPartialResult: TPNNode;
 	LAtBacktrack: UInt32;
 
-	function Success(): Boolean;
+	function Success(): Boolean; Inline;
 	begin
 		result := LPartialResult <> nil;
 
@@ -364,7 +370,7 @@ var
 	LPartialResult: TPNNode;
 	LAtBacktrack: UInt32;
 
-	function Success(): Boolean;
+	function Success(): Boolean; Inline;
 	begin
 		result := (LPartialResult <> nil) and ((not (sfFull in Flags)) or (GAt > GInputLength));
 
@@ -433,10 +439,5 @@ begin
 	end;
 end;
 
-var
-	LOC: TOperationCategory;
-initialization
-	for LOC in TOperationCategory do
-		GLongestOperator[LOC] := TOperationInfo.LongestSymbolic(LOC);
 end.
 
