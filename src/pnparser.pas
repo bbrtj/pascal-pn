@@ -34,6 +34,7 @@ implementation
 type
 	TStatementFlag = (sfFull, sfNotOperation);
 	TStatementFlags = set of TStatementFlag;
+	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctSymbol);
 
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
@@ -43,8 +44,37 @@ var
 	GAt: UInt32;
 	GLongestOperator: Array [TOperationCategory] of UInt32;
 	GCleanup: TCleanupList;
+	GCharacterTypes: Array of TCharacterType;
 
-function ManagedNode(Item: TItem; FoundAt: Integer): TPNNode; Inline;
+procedure InitGlobals(const ParseInput: String);
+var
+	I: Int32;
+begin
+	GCleanup := TCleanupList.Create;
+	GInput := UnicodeString(ParseInput);
+	GInputLength := length(GInput);
+	GAt := 1;
+
+	SetLength(GCharacterTypes, GInputLength);
+	for I := 0 to GInputLength - 1 do begin
+		if IsWhiteSpace(GInput[I + 1]) then
+			GCharacterTypes[I] := ctWhiteSpace
+		else if IsLetter(GInput[I + 1]) or (GInput[I + 1] = '_') then
+			GCharacterTypes[I] := ctLetter
+		else if IsDigit(GInput[I + 1]) then
+			GCharacterTypes[I] := ctDigit
+		else
+			GCharacterTypes[I] := ctSymbol
+		;
+	end;
+end;
+
+procedure DeInitGlobals();
+begin
+	GCleanup.Free;
+end;
+
+function ManagedNode(Item: TItem; FoundAt: Int32): TPNNode; Inline;
 begin
 	Item.ParsedAt := FoundAt;
 	result := TPNNode.Create(Item);
@@ -59,20 +89,25 @@ begin
 	result := GAt <= GInputLength;
 end;
 
+function CharacterType(Position: UInt32): TCharacterType; Inline;
+begin
+	result := GCharacterTypes[Position - 1];
+end;
+
 procedure SkipWhiteSpace(); Inline;
 begin
-	while IsWithinInput() and IsWhiteSpace(GInput[GAt]) do
+	while IsWithinInput() and (CharacterType(GAt) = ctWhiteSpace) do
 		inc(GAt);
 end;
 
 function ParseWord(): Boolean;
 begin
-	if not (IsWithinInput() and (IsLetter(GInput[GAt]) or (GInput[GAt] = '_'))) then
+	if not (IsWithinInput() and (CharacterType(GAt) = ctLetter)) then
 		exit(False);
 
 	repeat
 		inc(GAt);
-	until not (IsWithinInput() and (IsLetterOrDigit(GInput[GAt]) or (GInput[GAt] = '_')));
+	until not (IsWithinInput() and ((CharacterType(GAt) = ctLetter) or (CharacterType(GAt) = ctDigit)));
 
 	result := True;
 end;
@@ -151,7 +186,7 @@ begin
 	SkipWhiteSpace();
 
 	LStart := GAt;
-	if not (IsWithinInput() and IsDigit(GInput[GAt])) then
+	if not (IsWithinInput() and (CharacterType(GAt) = ctDigit)) then
 		exit(nil);
 
 	LHadPoint := False;
@@ -161,7 +196,7 @@ begin
 			LHadPoint := True;
 		end;
 		inc(GAt);
-	until not (IsWithinInput() and (IsDigit(GInput[GAt]) or (GInput[GAt] = cDecimalSeparator)));
+	until not (IsWithinInput() and ((CharacterType(GAt) = ctDigit) or (GInput[GAt] = cDecimalSeparator)));
 
 	LNumberStringified := copy(GInput, LStart, GAt - LStart);
 	result := ManagedNode(MakeItem(LNumberStringified), LStart);
@@ -361,10 +396,7 @@ function Parse(const ParseInput: String): TPNStack;
 var
 	LNode: TPNNode;
 begin
-	GCleanup := TCleanupList.Create;
-	GInput := UnicodeString(ParseInput);
-	GInputLength := length(GInput);
-	GAt := 1;
+	InitGlobals(ParseInput);
 
 	try
 		LNode := ParseStatement([sfFull]);
@@ -378,7 +410,7 @@ begin
 		end;
 
 	finally
-		GCleanup.Free;
+		DeInitGlobals;
 	end;
 end;
 
@@ -387,10 +419,7 @@ function ParseVariable(const ParseInput: String): String;
 var
 	LNode: TPNNode;
 begin
-	GCleanup := TCleanupList.Create;
-	GInput := UnicodeString(ParseInput);
-	GInputLength := length(GInput);
-	GAt := 1;
+	InitGlobals(ParseInput);
 
 	try
 		LNode := ParseVariableName;
@@ -400,7 +429,7 @@ begin
 
 		result := LNode.Item.VariableName;
 	finally
-		GCleanup.Free;
+		DeInitGlobals;
 	end;
 end;
 
