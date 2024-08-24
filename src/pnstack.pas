@@ -16,7 +16,6 @@ type
 
 	TPNBaseStack = class abstract(TStack)
 	public
-		destructor Destroy; override;
 		function Empty(): Boolean;
 	end;
 
@@ -27,6 +26,8 @@ type
 			cInfixOperatorPrefixChar = 'o';
 			cPrefixOperatorPrefixChar = 'p';
 			cVariablePrefixChar = 'v';
+
+		destructor Destroy; override;
 
 		procedure Push(const Item: TItem);
 		function Pop(): TItem;
@@ -40,6 +41,8 @@ type
 
 	TPNNumberStack = class(TPNBaseStack)
 	public
+		destructor Destroy; override;
+
 		procedure Push(Item: TNumber);
 		function Pop(): TNumber;
 		function Top(): TNumber;
@@ -47,12 +50,12 @@ type
 
 implementation
 
-destructor TPNBaseStack.Destroy;
+destructor TPNStack.Destroy;
 var
 	LRes: ^TItem;
 begin
 	while not self.Empty do begin
-		LRes := self.Pop;
+		LRes := inherited Pop;
 		Dispose(LRes);
 	end;
 
@@ -174,6 +177,18 @@ begin
 		result[I] := self.Pop;
 		Inc(I);
 	end;
+end;
+
+destructor TPNNumberStack.Destroy;
+var
+	LRes: ^TNumber;
+begin
+	while not self.Empty do begin
+		LRes := inherited Pop;
+		Dispose(LRes);
+	end;
+
+	inherited;
 end;
 
 { Pushes on top of the stack }
