@@ -39,7 +39,7 @@ type
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
 var
-	GInput: UnicodeString;
+	GInput: String;
 	GInputLength: UInt32;
 	GAt: UInt32;
 	GCleanup: TCleanupList;
@@ -48,28 +48,34 @@ var
 procedure InitGlobals(const ParseInput: String);
 var
 	I: Int32;
+	LUnicodeStr: UnicodeString;
 begin
-	GCleanup := TCleanupList.Create;
-	GInput := UnicodeString(ParseInput);
+	GInput := ParseInput;
+	LUnicodeStr := UnicodeString(ParseInput);
 	GInputLength := Length(GInput);
 	GAt := 1;
 
+	if Length(LUnicodeStr) <> GInputLength then
+		raise EParsingFailed.Create('Non-ANSI input is not supported');
+
 	SetLength(GCharacterTypes, GInputLength);
 	for I := 0 to GInputLength - 1 do begin
-		if IsWhiteSpace(GInput[I + 1]) then
+		if IsWhiteSpace(LUnicodeStr[I + 1]) then
 			GCharacterTypes[I] := ctWhiteSpace
-		else if IsLetter(GInput[I + 1]) or (GInput[I + 1] = '_') then
+		else if IsLetter(LUnicodeStr[I + 1]) or (LUnicodeStr[I + 1] = '_') then
 			GCharacterTypes[I] := ctLetter
-		else if IsDigit(GInput[I + 1]) then
+		else if IsDigit(LUnicodeStr[I + 1]) then
 			GCharacterTypes[I] := ctDigit
-		else if GInput[I + 1] = cDecimalSeparator then
+		else if LUnicodeStr[I + 1] = cDecimalSeparator then
 			GCharacterTypes[I] := ctDecimalSeparator
-		else if (GInput[I + 1] = '(') or (GInput[I + 1] = ')') then
+		else if (LUnicodeStr[I + 1] = '(') or (LUnicodeStr[I + 1] = ')') then
 			GCharacterTypes[I] := ctBrace
 		else
 			GCharacterTypes[I] := ctSymbol
 		;
 	end;
+
+	GCleanup := TCleanupList.Create;
 end;
 
 procedure DeInitGlobals();
@@ -194,8 +200,9 @@ begin
 	result := nil;
 
 	LStart := GAt;
-	while IsWithinInput() and (CharacterType(GAt) = ctDigit) do
+	while IsWithinInput() and (CharacterType(GAt) = ctDigit) do begin
 		inc(GAt);
+	end;
 
 	if GAt = LStart then exit;
 	if IsWithinInput() and (CharacterType(GAt) = ctDecimalSeparator) then begin
