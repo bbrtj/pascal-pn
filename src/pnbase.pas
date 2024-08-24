@@ -9,7 +9,7 @@ unit PNBase;
 interface
 
 uses
-	Fgl, SysUtils, Character;
+	Fgl, Math, SysUtils, Character;
 
 const
 	cDecimalSeparator = '.';
@@ -89,7 +89,6 @@ type
 
 function MakeItem(Value: TNumber): TItem;
 function MakeItem(const Value: String): TItem;
-function MakeItem(const Value: String; ItemType: TItemType): TItem;
 function MakeItem(const Value: TVariableName): TItem;
 function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
 function MakeItem(Operation: TOperationInfo): TItem;
@@ -133,6 +132,76 @@ const
 var
 	GFloatFormat: TFormatSettings;
 
+function FastStrToFloat(const StrFloat: String): TNumber;
+
+	function CharToInt(const Digit: Char): Int8; Inline;
+	begin
+		case Digit of
+			'0': exit(0);
+			'1': exit(1);
+			'2': exit(2);
+			'3': exit(3);
+			'4': exit(4);
+			'5': exit(5);
+			'6': exit(6);
+			'7': exit(7);
+			'8': exit(8);
+			'9': exit(9);
+		else
+			exit(-1);
+		end;
+	end;
+
+var
+	I: Int32;
+	LDigit: Int8;
+	LNegative: Boolean;
+	LSize: Int32;
+	LHasSign: Boolean;
+	LPointAt: Int32;
+	LExp: Boolean;
+begin
+	result := 0;
+	LPointAt := 0;
+	LExp := False;
+
+	LSize := High(StrFloat);
+	if LSize = 0 then raise Exception.Create('Number is empty');
+
+	LNegative := StrFloat[1] = '-';
+	LHasSign := LNegative or (StrFloat[1] = '+');
+	if LSize = Ord(LHasSign) then raise Exception.Create('No number after sign');
+
+	for I := 1 + Ord(LHasSign) to LSize do begin
+		LDigit := CharToInt(StrFloat[I]);
+		if LDigit < 0 then begin
+			if (StrFloat[I] = cDecimalSeparator) and (LPointAt = 0) then begin
+				LPointAt := I;
+				continue;
+			end
+			else if (StrFloat[I] = 'E') then begin
+				LExp := True;
+				break;
+			end;
+
+			raise Exception.Create('Number conversion failed');
+		end;
+
+		result := result * 10 + LDigit;
+	end;
+
+	if LExp then begin
+		result := result * Power(10, FastStrToFloat(copy(StrFloat, I + 1, LSize - I)));
+		Dec(I);
+	end;
+
+	if LPointAt > 0 then
+		result := result / Power(10, I - LPointAt);
+
+	if LNegative then
+		result := -1 * result;
+end;
+
 { Creates TItem from TNumber }
 function MakeItem(Value: TNumber): TItem;
 begin
@@ -151,23 +220,8 @@ end;
 
 { Creates TItem from a string (guess) }
 function MakeItem(const Value: String): TItem;
-var
-	LNumericValue: TNumber;
 begin
-	if TryStrToFloat(Value, LNumericValue, GFloatFormat) then
-		result := MakeItem(LNumericValue)
-	else if IsValidIdent(Value) then
-		result := MakeItem(TVariableName(Value))
-	else
-		raise Exception.Create('Invalid token ' + Value);
-end;
-
-{ Creates TItem from a string (guess and check) }
-function MakeItem(const Value: String; ItemType: TItemType): TItem;
-begin
-	result := MakeItem(Value);
-	if result.ItemType <> ItemType then
-		raise Exception.Create('Invalid token ' + Value);
+	result := MakeItem(FastStrToFloat(Value));
 end;
 
 { Creates TItem from TOperatorName }

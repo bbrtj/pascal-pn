@@ -160,7 +160,7 @@ begin
 			LStack.Push(MakeItem(TOperatorName(SkipFirstChar()), ocPrefix))
 
 		else
-			LStack.Push(MakeItem(LPart, itNumber));
+			LStack.Push(MakeItem(LPart));
 	end;
 
 	result := LStack;

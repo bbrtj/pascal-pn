@@ -17,6 +17,7 @@ subtest 'valid strings' => sub {
 		'0',
 		'0.1',
 		'1.001250142E-299',
+		['2.9866061145576161E+019', '2.98660611455762E19'],
 		'vvariable',
 		'vo',
 		'o**#vo#vo',
@@ -24,7 +25,17 @@ subtest 'valid strings' => sub {
 		'o+#2.01#2.001',
 		'o*#va#vb#o-#3',
 	) {
-		is run_good('-i', $case, '-e'), $case, "$case export/import ok";
+		my $imported;
+		my $exported;
+
+		if (ref $case eq 'ARRAY') {
+			($imported, $exported) = @{$case};
+		}
+		else {
+			($imported, $exported) = ($case) x 2;
+		}
+
+		is run_good('-i', $imported, '-e'), $exported, "$case export/import ok";
 	}
 };
 
