@@ -135,7 +135,7 @@ var
 { Creates TItem from TNumber }
 function MakeItem(Value: TNumber): TItem;
 begin
-	result.ParsedAt := -1;
+	result.ParsedAt := 0;
 	result.ItemType := itNumber;
 	result.Number := Value;
 end;
@@ -143,7 +143,7 @@ end;
 { Creates TItem from TVariableName }
 function MakeItem(const Value: TVariableName): TItem;
 begin
-	result.ParsedAt := -1;
+	result.ParsedAt := 0;
 	result.ItemType := itVariable;
 	result.VariableName := Value;
 end;
@@ -172,7 +172,7 @@ end;
 { Creates TItem from TOperatorName }
 function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
 begin
-	result.ParsedAt := -1;
+	result.ParsedAt := 0;
 	result.ItemType := itOperator;
 	result.Operation := TOperationInfo.Find(Value, OT);
 
@@ -183,7 +183,7 @@ end;
 { creates TItem from TOperationInfo }
 function MakeItem(Operation: TOperationInfo): TItem;
 begin
-	result.ParsedAt := -1;
+	result.ParsedAt := 0;
 	result.ItemType := itOperator;
 	result.Operation := Operation;
 end;
