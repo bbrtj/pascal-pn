@@ -195,26 +195,18 @@ end;
 function ParseNumber(): TPNNode;
 var
 	LStart: UInt32;
+	LNumber: TNumber;
 begin
 	SkipWhiteSpace();
 	result := nil;
 
 	LStart := GAt;
-	while IsWithinInput() and (CharacterType(GAt) = ctDigit) do begin
-		inc(GAt);
+	LNumber := FastStrToFloat(GInput, GAt);
+
+	if GAt > LStart then begin
+		result := ManagedNode(MakeItem(LNumber), LStart);
+		SkipWhiteSpace();
 	end;
-
-	if GAt = LStart then exit;
-	if IsWithinInput() and (CharacterType(GAt) = ctDecimalSeparator) then begin
-		inc(GAt);
-
-		while IsWithinInput() and (CharacterType(GAt) = ctDigit) do
-			inc(GAt);
-	end;
-
-	result := ManagedNode(MakeItem(copy(GInput, LStart, GAt - LStart)), LStart);
-
-	SkipWhiteSpace();
 end;
 
 function ParseVariableName(): TPNNode;

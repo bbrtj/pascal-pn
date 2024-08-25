@@ -94,6 +94,7 @@ function MakeItem(const Value: TOperatorName; OT: TOperationCategory): TItem;
 function MakeItem(Operation: TOperationInfo): TItem;
 
 function GetItemValue(const Item: TItem): String;
+function FastStrToFloat(const Txt: String; var Offset: UInt32): TNumber;
 
 implementation
 
@@ -132,74 +133,94 @@ const
 var
 	GFloatFormat: TFormatSettings;
 
-function FastStrToFloat(const StrFloat: String): TNumber;
-
-	function CharToInt(const Digit: Char): Int8; Inline;
-	begin
-		case Digit of
-			'0': exit(0);
-			'1': exit(1);
-			'2': exit(2);
-			'3': exit(3);
-			'4': exit(4);
-			'5': exit(5);
-			'6': exit(6);
-			'7': exit(7);
-			'8': exit(8);
-			'9': exit(9);
-		else
-			exit(-1);
-		end;
+{ private, helper }
+function CharToInt(const Digit: Char): Int8; Inline;
+begin
+	case Digit of
+		'0': exit(0);
+		'1': exit(1);
+		'2': exit(2);
+		'3': exit(3);
+		'4': exit(4);
+		'5': exit(5);
+		'6': exit(6);
+		'7': exit(7);
+		'8': exit(8);
+		'9': exit(9);
+	else
+		exit(-1);
 	end;
+end;
 
+function DigitsFromStr(const Txt: String; var Offset: UInt32): TNumber; Inline;
 var
-	I: Int32;
+	I: UInt32;
 	LDigit: Int8;
-	LNegative: Boolean;
-	LSize: Int32;
-	LHasSign: Boolean;
-	LPointAt: Int32;
-	LExp: Boolean;
 begin
 	result := 0;
-	LPointAt := 0;
-	LExp := False;
+	LDigit := -1;
 
-	LSize := High(StrFloat);
-	if LSize = 0 then raise Exception.Create('Number is empty');
-
-	LNegative := StrFloat[1] = '-';
-	LHasSign := LNegative or (StrFloat[1] = '+');
-	if LSize = Ord(LHasSign) then raise Exception.Create('No number after sign');
-
-	for I := 1 + Ord(LHasSign) to LSize do begin
-		LDigit := CharToInt(StrFloat[I]);
-		if LDigit < 0 then begin
-			if (StrFloat[I] = cDecimalSeparator) and (LPointAt = 0) then begin
-				LPointAt := I;
-				continue;
-			end
-			else if (StrFloat[I] = 'E') then begin
-				LExp := True;
-				break;
-			end;
-
-			raise Exception.Create('Number conversion failed');
-		end;
+	for I := Offset to High(Txt) do begin
+		LDigit := CharToInt(Txt[I]);
+		if LDigit < 0 then break;
 
 		result := result * 10 + LDigit;
 	end;
 
-	if LExp then begin
-		result := result * Power(10, FastStrToFloat(copy(StrFloat, I + 1, LSize - I)));
-		Dec(I);
+	// in case we are at string length and the last digit was ok, add 1
+	Offset := I + Ord(LDigit >= 0);
+end;
+
+function FastStrToFloat(const Txt: String; var Offset: UInt32): TNumber;
+var
+	I, OldI: UInt32;
+	LSize: UInt32;
+	LSecondary: TNumber;
+	LNegative: Boolean;
+begin
+	result := 0;
+	LSize := High(Txt);
+	I := Offset;
+
+	if I > LSize then exit(0);
+
+	LNegative := Txt[I] = '-';
+	if LNegative or (Txt[I] = '+') then
+		Inc(I);
+
+	OldI := I;
+	result := DigitsFromStr(Txt, I);
+	if OldI = I then exit(0);
+
+	if (I <= LSize) and (Txt[I] = cDecimalSeparator) then begin
+		Inc(I);
+		OldI := I;
+		LSecondary := DigitsFromStr(Txt, I);
+		if OldI = I then exit(0);
+
+		result := result + (LSecondary / Power(10, I - OldI));
 	end;
 
-	if LPointAt > 0 then
-		result := result / Power(10, I - LPointAt);
+	result := result * (1 - 2 * Ord(LNegative));
 
-	if LNegative then
-		result := -1 * result;
+	if (I <= LSize) and (Txt[I] = 'E') then begin
+		Inc(I);
+
+		if I > LSize then exit(0);
+
+		LNegative := Txt[I] = '-';
+		if LNegative or (Txt[I] = '+') then
+			Inc(I);
+
+		OldI := I;
+		LSecondary := DigitsFromStr(Txt, I);
+		if OldI = I then exit(0);
+
+		LSecondary := LSecondary * (1 - 2 * Ord(LNegative));
+		result := result * Power(10, LSecondary);
+	end;
+
+	Offset := I;
 end;
 
 { Creates TItem from TNumber }
@@ -218,10 +239,15 @@ begin
 	result.VariableName := Value;
 end;
 
-{ Creates TItem from a string (guess) }
+{ Creates TItem from a string (guess TNumber) }
 function MakeItem(const Value: String): TItem;
+var
+	LOffset: UInt32;
 begin
-	result := MakeItem(FastStrToFloat(Value));
+	LOffset := Low(Value);
+	result := MakeItem(FastStrToFloat(Value, LOffset));
+	if (Length(Value) = 0) or (LOffset <> High(Value) + 1) then
+		raise Exception.Create('Could not convert the number');
 end;
 
 { Creates TItem from TOperatorName }

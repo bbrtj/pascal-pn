@@ -30,6 +30,7 @@ subtest 'single context' => sub {
 subtest 'nested contexts' => sub {
 	for my $case (
 		['--1', 'p-#p-#1'],
+		['--1.1E1-1', 'o-#p-#p-#11#1'],
 		['2*-1', 'o*#2#p-#1'],
 		['-(-2 + 3)', 'p-#o+#p-#2#3'],
 		['-ln 5 + 3', 'p-#pln#o+#5#3'],

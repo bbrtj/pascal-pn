@@ -17,7 +17,9 @@ subtest 'valid strings' => sub {
 		'0',
 		'0.1',
 		'1.001250142E-299',
+		['0E0', '0'],
 		['2.9866061145576161E+019', '2.98660611455762E19'],
+		['37.333333333333333333333333333333333333333333333333333333333333333333333333333', '37.3333333333333'],
 		'vvariable',
 		'vo',
 		'o**#vo#vo',
@@ -35,13 +37,22 @@ subtest 'valid strings' => sub {
 			($imported, $exported) = ($case) x 2;
 		}
 
-		is run_good('-i', $imported, '-e'), $exported, "$case export/import ok";
+		is run_good('-i', $imported, '-e'), $exported, "$imported export/import ok";
 	}
 };
 
 subtest 'invalid strings' => sub {
 	for my $case (
+		'.',
+		'0.',
+		'.0',
 		'0,0',
+		'0.0E',
+		'E1',
+		'1E-',
+		'1.E',
+		'1.0E+',
+		'1.0E0.1',
 		'notavar',
 		'5.315notanumber',
 		'5.315 notanumber',
