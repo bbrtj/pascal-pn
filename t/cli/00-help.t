@@ -10,7 +10,7 @@ use CLIHelper;
 #############################################################################
 
 subtest 'not enough parameters' => sub {
-	like run_bad(), qr/Nothing to calculate/, 'empty command line ok';
+	like run_bad(), qr/Must either parse or import/, 'empty command line ok';
 };
 
 subtest 'show help' => sub {
@@ -18,3 +18,4 @@ subtest 'show help' => sub {
 };
 
 done_testing;
+
