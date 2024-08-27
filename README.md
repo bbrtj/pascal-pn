@@ -21,29 +21,22 @@ a calculation in an unambigous way, such as:
 
 This notation is stored as a simple stack can be exported to a string. The
 program can later import the stack from a string and perform the calculation on
-it.
+it. It uses a recursive descent parser and a binary tree to transform a string
+into a calculation. The final calculation is expressed as a stack.
 
 ## Features
 
 - Translates standard notation to polish notation
 - Recognizes textual variables that can be assigned for calculation
+- Saves the offset at which an operator / number / variable was found
 - Fast string export / import
 - Evaluation based on 64 bit (double) floating point numbers
-- Compiled into a CLI program or into a shared library (work in progress)
+- Compiled into a CLI program or can be linked statically in your program
 
 ## Supported operators
 
-### Unary
-
-```
--
-```
-
-### Binary
-
-```
-+ - * / ^ %
-```
+This library supports a range of operators and functions. Full and up to date
+list is available when running `cli --help`.
 
 ### Export format
 
@@ -82,19 +75,12 @@ cat exported.txt | perl -pn -e '
 
 ## Building
 
-Free Pascal Compiler with Object Pascal RTL is required to build.
-
-Makefile contents should suffice for most building needs. To build an optimized
-CLI binary:
-
-```
-O_LEVEL=4 make build
-```
-
-To build an optimized shared library:
+The CLI program is build through Lazarus. You also can use `lazbuild` or the
+contents of the `makefile`. Free Pascal Compiler with Object Pascal RTL is
+required to build.
 
 ```
-O_LEVEL=4 make build-library
+make build
 ```
 
 ## Testing
@@ -106,6 +92,21 @@ of the box.
 ```
 make test
 ```
+
+## Benchmarking and performance
+
+The CLI program allows usage of flag `-b`, which makes the program perform the
+operation a number of times. This way it can be used to benchmark the
+performance of the library, for example:
+
+```
+make build
+time ./cli -p "2.81 + 3E5 / 5 * var1 ^ 4 - (8.81 - 16 * 32 + (51 * 49.999))" -v var1 50 -b 500000
+```
+
+Benchmarking on a T480 machine with i7-8650U on FreeBSD 14.1 has shown around
+16 microseconds is required to do the entire parsing and calculation of the
+expression above.
 
 ## Author and License
 

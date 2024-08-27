@@ -1,4 +1,4 @@
-program PNCLI;
+program CLI;
 
 {$mode objfpc}{$H+}{$J-}
 

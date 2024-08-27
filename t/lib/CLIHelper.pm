@@ -7,7 +7,7 @@ use Exporter qw(import);
 
 our @EXPORT = qw(run run_good run_bad);
 
-use constant PROGRAM_PATH => 'build/pncli';
+use constant PROGRAM_PATH => './cli';
 
 sub get_cmd
 {
@@ -50,3 +50,4 @@ sub run_bad
 }
 
 1;
+
