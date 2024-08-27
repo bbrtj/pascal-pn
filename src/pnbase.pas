@@ -136,20 +136,8 @@ var
 { private, helper }
 function CharToInt(const Digit: Char): Int8; Inline;
 begin
-	case Digit of
-		'0': exit(0);
-		'1': exit(1);
-		'2': exit(2);
-		'3': exit(3);
-		'4': exit(4);
-		'5': exit(5);
-		'6': exit(6);
-		'7': exit(7);
-		'8': exit(8);
-		'9': exit(9);
-	else
-		exit(-1);
-	end;
+	result := Ord(Digit) - Ord('0');
+	if result > 9 then result := -1;
 end;
 
 function DigitsFromStr(const Txt: String; var Offset: UInt32): TNumber; Inline;
