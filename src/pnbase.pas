@@ -15,7 +15,7 @@ const
 	cDecimalSeparator = '.';
 
 type
-	TNumber = Double;
+	TNumber = Extended;
 	TVariableName = type String[20];
 	TOperatorName = type String[20];
 

@@ -30,7 +30,7 @@ into a calculation. The final calculation is expressed as a stack.
 - Recognizes textual variables that can be assigned for calculation
 - Saves the offset at which an operator / number / variable was found
 - Fast string export / import
-- Evaluation based on 64 bit (double) floating point numbers
+- Evaluation based on Extended (64 - 80 bit) floating point numbers
 - Compiled into a CLI program or can be linked statically in your program
 
 ## Supported operators

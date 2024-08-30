@@ -8,7 +8,7 @@ program CLI;
 
 uses
 	SysUtils,
-	PN;
+	PN, PNBase;
 
 type
 	TAction = (aParse, aImport, aExport, aHelp);
@@ -16,7 +16,7 @@ type
 
 	TVariable = record
 		Name: String;
-		Value: Double;
+		Value: TNumber;
 	end;
 
 	TVariableArray = Array of TVariable;
@@ -109,7 +109,7 @@ var
 	Args: TProgramArgs;
 	Calc: TPN;
 	I: Int32;
-	CalcResult: Double;
+	CalcResult: TNumber;
 	CalcExportResult: String;
 	SingleVar: TVariable;
 
