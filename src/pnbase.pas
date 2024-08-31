@@ -140,6 +140,7 @@ begin
 	if result > 9 then result := -1;
 end;
 
+{ private, helper }
 function DigitsFromStr(const Txt: String; var Offset: UInt32): TNumber; Inline;
 var
 	I: UInt32;
@@ -159,27 +160,53 @@ begin
 	Offset := I + Ord(LDigit >= 0);
 end;
 
-function FastStrToFloat(const Txt: String; var Offset: UInt32): TNumber;
+type
+	TParsedNumber = record
+		Value: TNumber;
+		Sign: Single;
+	end;
+
+{ private, helper }
+function ParseNumber(const Txt: String; var Offset: UInt32): TParsedNumber; Inline;
 var
 	I, OldI: UInt32;
-	LSize: UInt32;
-	LSecondary: TNumber;
 	LNegative: Boolean;
 begin
-	result := 0;
-	LSize := High(Txt);
 	I := Offset;
 
-	if I > LSize then exit(0);
+	if I > High(Txt) then exit;
 
 	LNegative := Txt[I] = '-';
 	if LNegative or (Txt[I] = '+') then
 		Inc(I);
 
+	result.Sign := 1 - 2 * Ord(LNegative);
+
 	OldI := I;
-	result := DigitsFromStr(Txt, I);
+	result.Value := DigitsFromStr(Txt, I);
+	if OldI = I then exit;
+
+	Offset := I;
+end;
+
+function FastStrToFloat(const Txt: String; var Offset: UInt32): TNumber;
+var
+	I, OldI: UInt32;
+	LSize: UInt32;
+	LSecondary: TNumber;
+	LParsed: TParsedNumber;
+begin
+	LSize := High(Txt);
+	I := Offset;
+
+	// get the number
+	OldI := I;
+	LParsed := ParseNumber(Txt, I);
 	if OldI = I then exit(0);
 
+	result := LParsed.Value;
+
+	// handle fraction
 	if (I <= LSize) and (Txt[I] = cDecimalSeparator) then begin
 		Inc(I);
 		OldI := I;
@@ -189,23 +216,17 @@ begin
 		result := result + (LSecondary / Power(10, I - OldI));
 	end;
 
-	result := result * (1 - 2 * Ord(LNegative));
+	// handle sign here, since the number may be 0 with a fraction
+	result *= LParsed.Sign;
 
-	if (I <= LSize) and (Txt[I] = 'E') then begin
+	// handle the exponent
+	if (I <= LSize) and ((Txt[I] = 'E') or (Txt[I] = 'e')) then begin
 		Inc(I);
-
-		if I > LSize then exit(0);
-
-		LNegative := Txt[I] = '-';
-		if LNegative or (Txt[I] = '+') then
-			Inc(I);
-
 		OldI := I;
-		LSecondary := DigitsFromStr(Txt, I);
+		LParsed := ParseNumber(Txt, I);
 		if OldI = I then exit(0);
 
-		LSecondary := LSecondary * (1 - 2 * Ord(LNegative));
-		result := result * Power(10, LSecondary);
+		result := result * Power(10, LParsed.Sign * LParsed.Value);
 	end;
 
 	Offset := I;
