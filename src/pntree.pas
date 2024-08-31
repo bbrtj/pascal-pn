@@ -48,10 +48,6 @@ implementation
 constructor TPNNode.Create(const Item: TItem);
 begin
 	FItem := Item;
-	FGrouped := False;
-	FLeft := nil;
-	FRight := nil;
-	FParent := nil;
 end;
 
 { Set the left node (plus its parent) }
