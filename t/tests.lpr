@@ -1,4 +1,4 @@
-program PNUnitTest;
+program Tests;
 
 uses TAPSuite,
 	BaseTests, CalcTests, ParseErrorTests;

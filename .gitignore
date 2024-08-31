@@ -2,7 +2,7 @@ backup
 /lib
 /t/build
 /t/tests.t
-cli.lps
+*.lps
 cli
 cli_debug
 
