@@ -136,55 +136,90 @@ var
 { private, helper }
 function CharToInt(const Digit: Char): Int8; Inline;
 begin
-	result := Ord(Digit) - Ord('0');
-	if result > 9 then result := -1;
+	case Digit of
+		'0': result := 0;
+		'1': result := 1;
+		'2': result := 2;
+		'3': result := 3;
+		'4': result := 4;
+		'5': result := 5;
+		'6': result := 6;
+		'7': result := 7;
+		'8': result := 8;
+		'9': result := 9;
+		'a', 'A': result := 10;
+		'b', 'B': result := 11;
+		'c', 'C': result := 12;
+		'd', 'D': result := 13;
+		'e', 'E': result := 14;
+		'f', 'F': result := 15;
+	else
+		result := -1;
+	end;
 end;
 
 { private, helper }
-function DigitsFromStr(const Txt: String; var Offset: UInt32): TNumber; Inline;
+function DigitsFromStr(const Txt: String; var Offset: UInt32; Base: UInt8 = 10): TNumber; Inline;
 var
 	I: UInt32;
 	LDigit: Int8;
 begin
 	result := 0;
-	LDigit := -1;
 
 	for I := Offset to High(Txt) do begin
 		LDigit := CharToInt(Txt[I]);
-		if LDigit < 0 then break;
+		if (LDigit < 0) or (LDigit >= Base) then break;
 
-		result := result * 10 + LDigit;
+		result := result * Base + LDigit;
+		Inc(Offset);
 	end;
-
-	// in case we are at string length and the last digit was ok, add 1
-	Offset := I + Ord(LDigit >= 0);
 end;
 
 type
 	TParsedNumber = record
 		Value: TNumber;
 		Sign: Single;
+		Base: UInt8;
 	end;
 
 { private, helper }
-function ParseNumber(const Txt: String; var Offset: UInt32): TParsedNumber; Inline;
+function ParseNumber(const Txt: String; var Offset: UInt32): TParsedNumber;
 var
 	I, OldI: UInt32;
 	LNegative: Boolean;
+	LSize: UInt32;
 begin
 	I := Offset;
+	LSize := High(Txt);
 
-	if I > High(Txt) then exit;
+	if I > LSize then exit;
 
 	LNegative := Txt[I] = '-';
+	result.Sign := 1 - 2 * Ord(LNegative);
 	if LNegative or (Txt[I] = '+') then
 		Inc(I);
 
-	result.Sign := 1 - 2 * Ord(LNegative);
+	result.Base := 10;
+	if (I < LSize) and (Txt[I] = '0') then begin
+		case Txt[I + 1] of
+			'b': result.Base := 2;
+			'o': result.Base := 8;
+			'x': result.Base := 16;
+		end;
+
+		if result.Base <> 10 then
+			Inc(I, 2);
+	end;
 
 	OldI := I;
-	result.Value := DigitsFromStr(Txt, I);
-	if OldI = I then exit;
+	result.Value := DigitsFromStr(Txt, I, result.Base);
+	if OldI = I then begin
+		if result.Base = 10 then exit;
+
+		// fall back to 0 before base letter, like 0 in 0x
+		result.Base := 10;
+		result.Value := 0;
+	end;
 
 	Offset := I;
 end;
@@ -207,26 +242,25 @@ begin
 	result := LParsed.Value;
 
 	// handle fraction
-	if (I <= LSize) and (Txt[I] = cDecimalSeparator) then begin
+	if (I < LSize) and (Txt[I] = cDecimalSeparator) then begin
 		Inc(I);
 		OldI := I;
-		LSecondary := DigitsFromStr(Txt, I);
-		if OldI = I then exit(0);
+		LSecondary := DigitsFromStr(Txt, I, LParsed.Base);
 
-		result := result + (LSecondary / Power(10, I - OldI));
+		if OldI = I then I := OldI - 1
+		else result := result + (LSecondary / Power(LParsed.Base, I - OldI));
 	end;
 
 	// handle sign here, since the number may be 0 with a fraction
 	result *= LParsed.Sign;
 
-	// handle the exponent
-	if (I <= LSize) and ((Txt[I] = 'E') or (Txt[I] = 'e')) then begin
+	// handle the exponent (only for base 10!)
+	if (I < LSize) and (LParsed.Base = 10) and ((Txt[I] = 'E') or (Txt[I] = 'e')) then begin
 		Inc(I);
 		OldI := I;
 		LParsed := ParseNumber(Txt, I);
-		if OldI = I then exit(0);
-
-		result := result * Power(10, LParsed.Sign * LParsed.Value);
+		if (OldI = I) or (LParsed.Base <> 10) then I := OldI - 1
+		else result := result * Power(10, LParsed.Sign * LParsed.Value);
 	end;
 
 	Offset := I;

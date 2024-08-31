@@ -124,6 +124,7 @@ procedure TBaseSuite.FastStrToFloatTest();
 	end;
 
 begin
+	// decimal
 	TestCase('0', 0);
 	TestCase('-0', 0);
 	TestCase('+0', 0);
@@ -134,6 +135,8 @@ begin
 	TestCase('-01', -1);
 	TestCase('-01.01', -1.01);
 	TestCase('123456789.87654321', 123456789.87654321);
+
+	// scientific
 	TestCase('1.2345e2', 123.45);
 	TestCase('1.2345e+2', 123.45);
 	TestCase('1.2345E2', 123.45);
@@ -142,19 +145,52 @@ begin
 	TestCase('-1.2345E-1', -0.12345);
 	TestCase('-1.2345e100', -1.2345e100);
 
+	// binary
+	TestCase('0b0', 0);
+	TestCase('0b1', 1);
+	TestCase('-0b11', -3);
+	TestCase('0b01', 1);
+	TestCase('0b10', 2);
+	TestCase('0b10.01', 2.25);
+
+	// octal
+	TestCase('0o1', 1);
+	TestCase('-0o5', -5);
+	TestCase('0o11', 9);
+	TestCase('0o17.1', 15.125);
+
+	// hexadecimal
+	TestCase('0xa', $a);
+	TestCase('-0x0', $0);
+	TestCase('-0xc', -$c);
+	TestCase('0xff', $ff);
+	TestCase('0x11ff0', $11ff0);
+	TestCase('0x7B.73333333333333333333', 123.45);
+
+	// with offset
 	TestCase('With offset: 12.50', 12.5, 14);
 	TestCase('With offset: -10.2e1 and then no number', -102, 14);
 
+	// partial
+	TestCase('1.', 1);
+	TestCase('1.e', 1);
+	TestCase('1.e2', 1);
+	TestCase('1e', 1);
+	TestCase('1e1f', 10);
+	TestCase('0x', 0);
+	TestCase('0x1e10g', $1e10);
+	TestCase('0b123', 1);
+	TestCase('0o799', 7);
+	TestCase('0x-5', 0);
+	TestCase('12e3.5', 12000);
+
+	// completely broken
 	BrokenTestCase('.');
 	BrokenTestCase('.1');
-	BrokenTestCase('1.');
-	BrokenTestCase('1.e');
-	BrokenTestCase('1.e1');
-	BrokenTestCase('1e');
-	BrokenTestCase('1ea');
 	BrokenTestCase('.1e');
 	BrokenTestCase('-+1');
 	BrokenTestCase('+-1');
+	BrokenTestCase('beef');
 end;
 
 end.

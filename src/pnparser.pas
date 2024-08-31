@@ -23,7 +23,7 @@ unit PNParser;
 interface
 
 uses
-	Fgl, SysUtils, Character, Math,
+	Fgl, SysUtils, Character,
 	PNTree, PNStack, PNBase;
 
 function Parse(const ParseInput: String): TPNStack;
