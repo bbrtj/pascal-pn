@@ -1,5 +1,5 @@
 backup
-lib
+/lib
 /t/build
 /t/tests.t
 cli.lps

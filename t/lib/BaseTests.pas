@@ -14,6 +14,7 @@ type
 		procedure CreateTest();
 		procedure ObviousCalcTest();
 		procedure ParsedAtTest();
+		procedure FastStrToFloatTest();
 	end;
 
 
@@ -29,6 +30,7 @@ begin
 	Scenario(@self.CreateTest, 'should construct and destruct');
 	Scenario(@self.ObviousCalcTest, 'should parse a very simple calculation');
 	Scenario(@self.ParsedAtTest, 'should remember string offsets where it found tokens');
+	Scenario(@self.FastStrToFloatTest, 'should parse numbers from strings');
 end;
 
 procedure TBaseSuite.CreateTest();
@@ -88,6 +90,71 @@ begin
 	TestItem(4, itOperator, '+', 10);
 
 	LCalc.Free;
+end;
+
+procedure TBaseSuite.FastStrToFloatTest();
+	procedure TestCase(const Txt: String; Expected: TNumber; StartAt: UInt32 = 1);
+	var
+		I: UInt32;
+		LParsed: TNumber;
+	begin
+		SubtestBegin('testing case "' + Txt + '" starting at index ' + IntToStr(StartAt));
+		I := StartAt;
+		LParsed := FastStrToFloat(Txt, I);
+		if I = StartAt then
+			TestFail('parsing the number has failed')
+		else
+			TestWithin(LParsed, Expected, cSmallPrecision, 'parsed number ok');
+		SubtestEnd;
+	end;
+
+	procedure BrokenTestCase(const Txt: String; StartAt: UInt32 = 1);
+	var
+		I: UInt32;
+		LParsed: TNumber;
+	begin
+		SubtestBegin('testing broken case "' + Txt + '" starting at index ' + IntToStr(StartAt));
+		I := StartAt;
+		LParsed := FastStrToFloat(Txt, I);
+		if I = StartAt then
+			TestPass('parsing the number has failed (as expected)')
+		else
+			TestFail('parsing the incorrect number has succeded and yielded ' + FloatToStr(LParsed));
+		SubtestEnd;
+	end;
+
+begin
+	TestCase('0', 0);
+	TestCase('-0', 0);
+	TestCase('+0', 0);
+	TestCase('00', 0);
+	TestCase('01', 1);
+	TestCase('+01', 1);
+	TestCase('-1', -1);
+	TestCase('-01', -1);
+	TestCase('-01.01', -1.01);
+	TestCase('123456789.87654321', 123456789.87654321);
+	TestCase('1.2345e2', 123.45);
+	TestCase('1.2345e+2', 123.45);
+	TestCase('1.2345E2', 123.45);
+	TestCase('+1.2345E2', 123.45);
+	TestCase('+1.2345E-1', 0.12345);
+	TestCase('-1.2345E-1', -0.12345);
+	TestCase('-1.2345e100', -1.2345e100);
+
+	TestCase('With offset: 12.50', 12.5, 14);
+	TestCase('With offset: -10.2e1 and then no number', -102, 14);
+
+	BrokenTestCase('.');
+	BrokenTestCase('.1');
+	BrokenTestCase('1.');
+	BrokenTestCase('1.e');
+	BrokenTestCase('1.e1');
+	BrokenTestCase('1e');
+	BrokenTestCase('1ea');
+	BrokenTestCase('.1e');
+	BrokenTestCase('-+1');
+	BrokenTestCase('+-1');
 end;
 
 end.
