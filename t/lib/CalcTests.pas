@@ -247,11 +247,20 @@ begin
 	FCalc.ParseString('round 15.66');
 	TestWithin(FCalc.GetResult, 16, cSmallPrecision, 'round');
 
+	FCalc.ParseString('round(1e12 + 0.1)');
+	TestWithin(FCalc.GetResult, 1e12, cSmallPrecision, 'big round');
+
 	FCalc.ParseString('floor 15.66');
 	TestWithin(FCalc.GetResult, 15, cSmallPrecision, 'floor');
 
+	FCalc.ParseString('floor(1e12 + 0.1)');
+	TestWithin(FCalc.GetResult, 1e12, cSmallPrecision, 'big floor');
+
 	FCalc.ParseString('ceil 15.66');
 	TestWithin(FCalc.GetResult, 16, cSmallPrecision, 'ceil');
+
+	FCalc.ParseString('ceil(1e12 - 0.1)');
+	TestWithin(FCalc.GetResult, 1e12, cSmallPrecision, 'big ceil');
 end;
 
 procedure TCalculationsSuite.VariablesTest();

@@ -97,7 +97,7 @@ end;
 function OpDiv(Stack: TPNNumberStack): TNumber;
 begin
 	result := NextArg(Stack);
-	result := Floor(result / NextArg(Stack));
+	result := Floor64(result / NextArg(Stack));
 end;
 
 { Handler for function sqrt }
@@ -146,7 +146,7 @@ end;
 { Note: Randomization must be performed by program running the calculator }
 function OpRand(Stack: TPNNumberStack): TNumber;
 begin
-	result := Random(Floor(NextArg(Stack)));
+	result := Random(Floor64(NextArg(Stack)));
 end;
 
 { Handler for function min }
@@ -170,13 +170,13 @@ end;
 { Handler for function floor }
 function OpFloor(Stack: TPNNumberStack): TNumber;
 begin
-	result := Floor(NextArg(Stack));
+	result := Floor64(NextArg(Stack));
 end;
 
 { Handler for function ceil }
 function OpCeil(Stack: TPNNumberStack): TNumber;
 begin
-	result := Ceil(NextArg(Stack));
+	result := Ceil64(NextArg(Stack));
 end;
 
 { Handler for function sign }
@@ -197,7 +197,7 @@ var
 	LInd: Int64;
 begin
 	result := 1;
-	for LInd := 2 to Floor(NextArg(Stack)) do
+	for LInd := 2 to Floor64(NextArg(Stack)) do
 		result *= LInd;
 end;
 
