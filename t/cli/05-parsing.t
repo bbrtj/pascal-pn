@@ -21,6 +21,7 @@ subtest 'single context' => sub {
 		['a + b * c', 'o+#va#o*#vb#vc'],
 		['2 - 3 - 4', 'o-#o-#2#3#4'],
 		['2 + 3 ^ 4 * 5 - 6', 'o-#o+#2#o*#o^#3#4#5#6'],
+		['fact(2) + fact(2) + fact(2)', 'o+#o+#pfact#2#pfact#2#pfact#2'],
 	) {
 		my $result = run_good('-p', $case->[0], '-e');
 		is $result, $case->[1], "parsing $case->[0] result ok";

@@ -266,14 +266,29 @@ var
 
 	function IsLowerPriority(Compare, Against: TPNNode): Boolean; Inline;
 	begin
-		result := (Compare <> nil) and Compare.IsOperation and (not Compare.Grouped)
+		result := (Compare <> nil) and (Compare.Left <> nil)
+			and Compare.IsOperation and (not Compare.Grouped)
 			and (Compare.OperationPriority <= Against.OperationPriority);
 	end;
 
-	function IsLeftGrouped(Compare: TPNNode): Boolean; Inline;
+	function LeftmostWithLowerPriority(Node: TPNNode): TPNNode;
 	begin
-		result := (Compare <> nil) and Compare.IsOperation and (not Compare.Grouped)
-			and (Compare.Left <> nil) and Compare.Left.Grouped;
+		result := Node.Right;
+		if not IsLowerPriority(result, Node) then exit(nil);
+
+		while IsLowerPriority(result.Left, Node) do
+			result := result.Left;
+	end;
+
+	function LeftmostGrouped(Node: TPNNode): TPNNode;
+	begin
+		result := Node.Right;
+
+		while (result <> nil) and not result.Grouped do
+			result := result.Left;
+
+		if result = Node.Right then exit(nil);
+		if (result <> nil) and not result.Grouped then exit(nil);
 	end;
 
 begin
@@ -286,22 +301,25 @@ begin
 		if Success then begin
 			LOp.Right := LPartialResult;
 
-			// check if LPartialResult is an operator (for precedence)
-			// (must descent to find leftmost operator which has a left part)
-			// (also do it if the left item is grouped while the entire statement is not)
-			if IsLeftGrouped(LPartialResult) or
-				(IsLowerPriority(LPartialResult, LOp) and (LPartialResult.Left <> nil)) then begin
-				while IsLowerPriority(LPartialResult.Left, LOp)
-					and (LPartialResult.Left.Left <> nil) do
-					LPartialResult := LPartialResult.Left;
+			// check grouping
+			LPartialResult := LeftmostGrouped(LOp);
+			if LPartialResult <> nil then begin
+				result := LOp.Right;
+				LPartialResult.Parent.Left := LOp;
+				LOp.Right := LPartialResult;
+				exit(result);
+			end;
+
+			// check precedence
+			LPartialResult := LeftmostWithLowerPriority(LOp);
+			if LPartialResult <> nil then begin
 				result := LOp.Right;
 				LOp.Right := LPartialResult.Left;
 				LPartialResult.Left := LOp;
-			end
-			else
-				result := LOp;
+				exit(result);
+			end;
 
-			exit(result);
+			exit(LOp);
 		end;
 	end;
 
@@ -318,11 +336,9 @@ begin
 				LOp.Left := LFirst;
 				LOp.Right := LPartialResult;
 
-				// check if LPartialResult is an operator (for precedence)
-				// (must descent to find leftmost operator)
-				if IsLowerPriority(LPartialResult, LOp) and (LPartialResult.Left <> nil) then begin
-					while IsLowerPriority(LPartialResult.Left, LOp) do
-						LPartialResult := LPartialResult.Left;
+				// check precedence
+				LPartialResult := LeftmostWithLowerPriority(LOp);
+				if LPartialResult <> nil then begin
 					result := LOp.Right;
 					LOp.Right := LPartialResult.Left;
 					LPartialResult.Left := LOp;

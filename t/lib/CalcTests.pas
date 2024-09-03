@@ -37,6 +37,7 @@ type
 		procedure RoundTest();
 
 		procedure VariablesTest();
+		procedure PrecedenceTest();
 	end;
 
 implementation
@@ -67,6 +68,7 @@ begin
 	Scenario(@self.AbsTest, 'should calculate absolute value');
 	Scenario(@self.RoundTest, 'should be able to perform rounding');
 	Scenario(@self.VariablesTest, 'should be able to use variables');
+	Scenario(@self.PrecedenceTest, 'should respect operator precedence');
 end;
 
 procedure TCalculationsSuite.Setup();
@@ -197,19 +199,19 @@ end;
 procedure TCalculationsSuite.IntegerDivisionTest();
 begin
 	FCalc.ParseString('5120 div 15');
-	TestWithin(FCalc.GetResult, 5120 div 15, cSmallPrecision);
+	TestWithin(FCalc.GetResult, 5120 div 15, cSmallPrecision, 'integer division');
 end;
 
 procedure TCalculationsSuite.FactorialTest();
 begin
 	FCalc.ParseString('fact 10');
-	TestWithin(FCalc.GetResult, 3628800, cSmallPrecision);
+	TestWithin(FCalc.GetResult, 3628800, cSmallPrecision, 'factorial');
 end;
 
 procedure TCalculationsSuite.ExpTest();
 begin
 	FCalc.ParseString('exp 19');
-	TestWithin(FCalc.GetResult, Exp(19), cSmallPrecision, '??');
+	TestWithin(FCalc.GetResult, Exp(19), cSmallPrecision, 'exponent');
 end;
 
 procedure TCalculationsSuite.MinMaxTest();
@@ -279,11 +281,20 @@ begin
 
 	FCalc.ParseString('-undef');
 	try
-		TestWithin(FCalc.GetResult, 1, cSmallPrecision);
+		FCalc.GetResult;
 		TestFail('variables must be defined');
 	except
 		on E: Exception do TestPass('got expected error: ' + E.Message);
 	end;
+end;
+
+procedure TCalculationsSuite.PrecedenceTest();
+begin
+	FCalc.ParseString('4 + 3 * 2 ** 5');
+	TestWithin(FCalc.GetResult, 4 + 3 * 2 ** 5, cSmallPrecision, 'infix precedence ok');
+
+	FCalc.ParseString('fact(fact(2) + 1) * fact(2) - 5');
+	TestWithin(FCalc.GetResult, 7, cSmallPrecision, 'prefix/infix precedence ok');
 end;
 
 end.
