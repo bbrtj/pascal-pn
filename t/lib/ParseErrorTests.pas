@@ -22,6 +22,7 @@ type
 
 		procedure EmptyStatementTest();
 		procedure UnmatchedBraceTest();
+		procedure MissingStatementTest();
 		procedure InvalidStatementTest();
 		procedure InvalidVariablesTest();
 	end;
@@ -48,6 +49,7 @@ begin
 
 	Scenario(@self.EmptyStatementTest, 'should error on empty statement');
 	Scenario(@self.UnmatchedBraceTest, 'should detect unmatched braces');
+	Scenario(@self.MissingStatementTest, 'should detect missing statement');
 	Scenario(@self.InvalidStatementTest, 'should detect invalid statement inside braces');
 	Scenario(@self.InvalidVariablesTest, 'should reject invalid variable names');
 end;
@@ -72,6 +74,11 @@ begin
 	self.TestForException('(2+3', EUnmatchedBraces);
 end;
 
+procedure TParseErrorSuite.MissingStatementTest();
+begin
+	self.TestForException('2 +', EInvalidStatement);
+end;
+
 procedure TParseErrorSuite.InvalidStatementTest();
 begin
 	self.TestForException('(-)', EInvalidStatement);
@@ -93,7 +100,6 @@ begin
 		on E: Exception do TestIs(E, EInvalidVariableName, 'invalid variable name ok');
 	end;
 end;
-
 
 end.
 

@@ -6,11 +6,9 @@ unit PNParser;
 	Code responsible for transforming a string into a PN stack
 
 	body = statement
-	statement = operation | block | operand
-
-	operation = (prefix_op statement) | (statement infix_op statement)
+	statement = (prefix_op statement) | (operand [infix_op operation])
+	operand = block | number | variable
 	block = left_brace statement right_brace
-	operand = number | variable
 
 	infix_op = <any of infix operators>
 	prefix_op = <any of prefix operators>
@@ -32,8 +30,6 @@ function ParseVariable(const ParseInput: String): String;
 implementation
 
 type
-	TStatementFlag = (sfFull, sfNotOperation);
-	TStatementFlags = set of TStatementFlag;
 	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctDecimalSeparator, ctBrace, ctSymbol);
 
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
@@ -44,6 +40,11 @@ var
 	GAt: UInt32;
 	GCleanup: TCleanupList;
 	GCharacterTypes: Array of TCharacterType;
+
+procedure ReportException(AClass: TParsingFailedClass; const ExMsg: String); Inline;
+begin
+	raise AClass.Create(ExMsg + ' (at offset ' + IntToStr(GAt - 1) + ')');
+end;
 
 procedure InitGlobals(const ParseInput: String);
 var
@@ -56,7 +57,7 @@ begin
 	GAt := 1;
 
 	if Length(LUnicodeStr) <> GInputLength then
-		raise EParsingFailed.Create('Non-ANSI input is not supported');
+		ReportException(EParsingFailed, 'Non-ANSI input is not supported');
 
 	SetLength(GCharacterTypes, GInputLength);
 	for I := 0 to GInputLength - 1 do begin
@@ -90,8 +91,22 @@ begin
 	GCleanup.Add(result);
 end;
 
-function ParseStatement(Flags: TStatementFlags = []): TPNNode;
+function ParseStatement(): TPNNode;
 forward;
+
+function SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean; Inline;
+begin
+	result := Parsed <> nil;
+
+	if not result then
+		GAt := Backtrack;
+end;
+
+procedure SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String); Inline;
+begin
+	if Parsed = nil then
+		ReportException(AClass, ExMsg);
+end;
 
 function IsWithinInput(): Boolean; Inline;
 begin
@@ -162,16 +177,6 @@ begin
 		result := ManagedNode(MakeItem(LOpInfo), LStart);
 end;
 
-function ParsePrefixOp(): TPNNode; Inline;
-begin
-	result := ParseOp(ocPrefix);
-end;
-
-function ParseInfixOp(): TPNNode; Inline;
-begin
-	result := ParseOp(ocInfix);
-end;
-
 function ParseOpeningBrace(): Boolean;
 begin
 	SkipWhiteSpace();
@@ -220,11 +225,12 @@ begin
 	if not ParseWord() then exit(nil);
 
 	LVarName := copy(GInput, LStart, GAt - LStart);
-	if TOperationInfo.Check(LVarName) then
-		raise EInvalidVariableName.Create('Operator found where variable was expected: ' + LVarName);
+	if TOperationInfo.Check(LVarName) then begin
+		GAt := LStart;
+		exit(nil);
+	end;
 
 	result := ManagedNode(MakeItem(LVarName), LStart);
-
 	SkipWhiteSpace();
 end;
 
@@ -237,9 +243,10 @@ begin
 	if ParseOpeningBrace() then begin
 		result := ParseStatement();
 		if result = nil then
-			raise EInvalidStatement.Create('Invalid statement at offset ' + IntToStr(GAt));
+			ReportException(EInvalidStatement, 'Invalid statement');
+
 		if not ParseClosingBrace() then
-			raise EUnmatchedBraces.Create('Missing braces at offset ' + IntToStr(GAt));
+			ReportException(EUnmatchedBraces, 'Missing braces');
 
 		// mark result with higher precedendce as it is in block
 		result.Grouped := True;
@@ -250,19 +257,29 @@ begin
 	result := nil;
 end;
 
-function ParseOperation(): TPNNode;
+function ParseOperand(): TPNNode;
+var
+	LPartialResult: TPNNode;
+	LAtBacktrack: UInt32;
+begin
+	LAtBacktrack := GAt;
+
+	LPartialResult := ParseBlock();
+	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
+
+	LPartialResult := ParseNumber();
+	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
+
+	LPartialResult := ParseVariableName();
+	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
+
+	result := nil;
+end;
+
+function ParseStatement(): TPNNode;
 var
 	LPartialResult, LOp, LFirst: TPNNode;
 	LAtBacktrack: UInt32;
-
-	function Success(): Boolean; Inline;
-	begin
-		result := LPartialResult <> nil;
-
-		// backtrack
-		if not result then
-			GAt := LAtBacktrack;
-	end;
 
 	function IsLowerPriority(Compare, Against: TPNNode): Boolean; Inline;
 	begin
@@ -294,120 +311,64 @@ var
 begin
 	LAtBacktrack := GAt;
 
-	LPartialResult := ParsePrefixOp();
-	if Success then begin
+	LPartialResult := ParseOp(ocPrefix);
+	if SuccessBacktrack(LPartialResult, LAtBacktrack) then begin
+		LOp := LPartialResult;
+
+		LPartialResult := ParseStatement();
+		SuccessException(LPartialResult, EInvalidStatement, 'Invalid statement');
+
+		LOp.Right := LPartialResult;
+
+		// check grouping
+		LPartialResult := LeftmostGrouped(LOp);
+		if LPartialResult <> nil then begin
+			result := LOp.Right;
+			LPartialResult.Parent.Left := LOp;
+			LOp.Right := LPartialResult;
+			exit(result);
+		end;
+
+		// check precedence
+		LPartialResult := LeftmostWithLowerPriority(LOp);
+		if LPartialResult <> nil then begin
+			result := LOp.Right;
+			LOp.Right := LPartialResult.Left;
+			LPartialResult.Left := LOp;
+			exit(result);
+		end;
+
+		exit(LOp);
+	end;
+
+	LPartialResult := ParseOperand();
+	if SuccessBacktrack(LPartialResult, LAtBacktrack) then begin
+		LFirst := LPartialResult;
+		LPartialResult := ParseOp(ocInfix);
+
+		if LPartialResult = nil then exit(LFirst);
+
 		LOp := LPartialResult;
 		LPartialResult := ParseStatement();
-		if Success then begin
-			LOp.Right := LPartialResult;
+		SuccessException(LPartialResult, EInvalidStatement, 'Invalid statement');
 
-			// check grouping
-			LPartialResult := LeftmostGrouped(LOp);
-			if LPartialResult <> nil then begin
-				result := LOp.Right;
-				LPartialResult.Parent.Left := LOp;
-				LOp.Right := LPartialResult;
-				exit(result);
-			end;
+		// No need to check for precedence on left argument, as we
+		// parse left to right (sfNotOperation on first)
+		LOp.Left := LFirst;
+		LOp.Right := LPartialResult;
 
-			// check precedence
-			LPartialResult := LeftmostWithLowerPriority(LOp);
-			if LPartialResult <> nil then begin
-				result := LOp.Right;
-				LOp.Right := LPartialResult.Left;
-				LPartialResult.Left := LOp;
-				exit(result);
-			end;
+		// check precedence
+		LPartialResult := LeftmostWithLowerPriority(LOp);
+		if LPartialResult <> nil then begin
+			result := LOp.Right;
+			LOp.Right := LPartialResult.Left;
+			LPartialResult.Left := LOp;
+		end
+		else
+			result := LOp;
 
-			exit(LOp);
-		end;
+		exit(result);
 	end;
-
-	LPartialResult := ParseStatement([sfNotOperation]);
-	if Success then begin
-		LFirst := LPartialResult;
-		LPartialResult := ParseInfixOp();
-		if Success then begin
-			LOp := LPartialResult;
-			LPartialResult := ParseStatement();
-			if Success then begin
-				// No need to check for precedence on left argument, as we
-				// parse left to right (sfNotOperation on first)
-				LOp.Left := LFirst;
-				LOp.Right := LPartialResult;
-
-				// check precedence
-				LPartialResult := LeftmostWithLowerPriority(LOp);
-				if LPartialResult <> nil then begin
-					result := LOp.Right;
-					LOp.Right := LPartialResult.Left;
-					LPartialResult.Left := LOp;
-				end
-				else
-					result := LOp;
-
-				exit(result);
-			end;
-		end;
-	end;
-
-	result := nil;
-end;
-
-function ParseOperand(): TPNNode;
-var
-	LPartialResult: TPNNode;
-	LAtBacktrack: UInt32;
-
-	function Success(): Boolean; Inline;
-	begin
-		result := LPartialResult <> nil;
-
-		// backtrack
-		if not result then
-			GAt := LAtBacktrack;
-	end;
-
-begin
-	LAtBacktrack := GAt;
-
-	LPartialResult := ParseNumber();
-	if Success then exit(LPartialResult);
-
-	LPartialResult := ParseVariableName();
-	if Success then exit(LPartialResult);
-
-	result := nil;
-end;
-
-function ParseStatement(Flags: TStatementFlags = []): TPNNode;
-var
-	LPartialResult: TPNNode;
-	LAtBacktrack: UInt32;
-
-	function Success(): Boolean; Inline;
-	begin
-		result := (LPartialResult <> nil) and ((not (sfFull in Flags)) or (GAt > GInputLength));
-
-		// backtrack
-		if not result then
-			GAt := LAtBacktrack;
-	end;
-
-begin
-	LAtBacktrack := GAt;
-
-	if not (sfNotOperation in Flags) then begin
-		LPartialResult := ParseOperation();
-		if Success then exit(LPartialResult);
-	end;
-
-	LPartialResult := ParseBlock();
-	if Success then exit(LPartialResult);
-
-	// operand last, as it is a part of an operation
-	LPartialResult := ParseOperand();
-	if Success then exit(LPartialResult);
 
 	result := nil;
 end;
@@ -420,9 +381,9 @@ begin
 	InitGlobals(ParseInput);
 
 	try
-		LNode := ParseStatement([sfFull]);
-		if LNode = nil then
-			raise EParsingFailed.Create('Couldn''t parse the calculation');
+		LNode := ParseStatement();
+		if (LNode = nil) or IsWithinInput() then
+			ReportException(EParsingFailed, 'Couldn''t parse the calculation');
 
 		result := TPNStack.Create;
 		while LNode <> nil do begin
@@ -445,8 +406,8 @@ begin
 	try
 		LNode := ParseVariableName;
 
-		if not((LNode <> nil) and (GAt > GInputLength)) then
-			raise EInvalidVariableName.Create('Invalid variable name ' + GInput);
+		if (LNode = nil) or IsWithinInput() then
+			ReportException(EInvalidVariableName, 'Invalid variable name ' + GInput);
 
 		result := LNode.Item.VariableName;
 	finally

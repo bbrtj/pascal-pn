@@ -81,11 +81,13 @@ type
 	ECalculationFailed = class(Exception);
 	EInvalidExpression = class(ECalculationFailed);
 	EUnknownVariable = class(ECalculationFailed);
+	TCalculationFailedClass = class of ECalculationFailed;
 
 	EParsingFailed = class(Exception);
 	EInvalidStatement = class(EParsingFailed);
 	EUnmatchedBraces = class(EParsingFailed);
 	EInvalidVariableName = class(EParsingFailed);
+	TParsingFailedClass = class of EParsingFailed;
 
 function MakeItem(Value: TNumber): TItem;
 function MakeItem(const Value: String): TItem;
