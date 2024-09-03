@@ -221,7 +221,7 @@ begin
 
 	LVarName := copy(GInput, LStart, GAt - LStart);
 	if TOperationInfo.Check(LVarName) then
-		raise EInvalidVariableName.Create('Operator found where variable was expected: ' + result.Item.VariableName);
+		raise EInvalidVariableName.Create('Operator found where variable was expected: ' + LVarName);
 
 	result := ManagedNode(MakeItem(LVarName), LStart);
 
