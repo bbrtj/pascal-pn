@@ -6,6 +6,6 @@ build:
 debug:
 	$(LAZBUILD) --build-mode=debug cli.lpi
 
-test:
+test: build
 	$(LAZBUILD) t/tests.lpi
 
