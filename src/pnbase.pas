@@ -78,12 +78,15 @@ type
 
 	TItemArray = Array of TItem;
 
-	ECalculationFailed = class(Exception);
+	EPNException = class(Exception);
+	ECalculationFailed = class(EPNException);
 	EInvalidExpression = class(ECalculationFailed);
+	ENotAggregated = class(ECalculationFailed);
+	EStackError = class(ECalculationFailed);
 	EUnknownVariable = class(ECalculationFailed);
 	TCalculationFailedClass = class of ECalculationFailed;
 
-	EParsingFailed = class(Exception);
+	EParsingFailed = class(EPNException);
 	EInvalidStatement = class(EParsingFailed);
 	EUnmatchedBraces = class(EParsingFailed);
 	EInvalidVariableName = class(EParsingFailed);
@@ -102,7 +105,7 @@ implementation
 
 const
 	cOperationTypeDesc: Array[otSeparator .. otExp] of String = (
-		{ otSeparator } 'separates multiple values for function calls',
+		{ otSeparator } 'separates values and creates a list',
 		{ otMinus } 'unary minus, yielding opposite number',
 		{ otAddition } 'addition, a plus b',
 		{ otSubtraction } 'subtraction, a minus b',
@@ -121,8 +124,8 @@ const
 		{ otArcSin } 'f(x), arcus sinus of x',
 		{ otArcCos } 'f(x), arcus cosinus of x',
 		{ otRand } 'f(x), random integer from 0 to x - 1',
-		{ otMin } 'f(x, y), smaller of two values',
-		{ otMax } 'f(x, y), larger of two values',
+		{ otMin } 'f(list), smallest value in a list',
+		{ otMax } 'f(list), largest value in a list',
 		{ otRound } 'f(x), rounds x to the nearest integer',
 		{ otFloor } 'f(x), rounds x to the nearest smaller integer',
 		{ otCeil } 'f(x), rounds x to the nearest larger integer',

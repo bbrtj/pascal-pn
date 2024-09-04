@@ -219,8 +219,14 @@ begin
 	FCalc.ParseString('min 6, 8');
 	TestWithin(FCalc.GetResult, 6, cSmallPrecision, 'min');
 
+	FCalc.ParseString('min 6, 8, 7, -3, 15, 0');
+	TestWithin(FCalc.GetResult, -3, cSmallPrecision, 'min with many arguments');
+
 	FCalc.ParseString('max 6, 8');
 	TestWithin(FCalc.GetResult, 8, cSmallPrecision, 'max');
+
+	FCalc.ParseString('max 6, 8, 7, -3, 15, 0');
+	TestWithin(FCalc.GetResult, 15, cSmallPrecision, 'max with many arguments');
 end;
 
 procedure TCalculationsSuite.SignTest();

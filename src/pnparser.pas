@@ -6,7 +6,7 @@ unit PNParser;
 	Code responsible for transforming a string into a PN stack
 
 	body = statement
-	statement = (prefix_op statement) | (operand [infix_op operation])
+	statement = (prefix_op statement) | (operand [infix_op statement])
 	operand = block | number | variable
 	block = left_brace statement right_brace
 

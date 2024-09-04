@@ -17,228 +17,266 @@ function Calculate(MainStack: TPNStack; Variables: TVariableMap): TNumber;
 implementation
 
 { Get the next argument from the stack, raise an exception if not possible }
-function NextArg(Stack: TPNNumberStack): TNumber;
+function NextArg(Stack: TPNCalculationStack): TNumber;
 begin
 	if Stack.Empty() then
-		raise Exception.Create('Invalid Polish notation: stack is empty, cannot get operand');
+		raise EStackError.Create('Invalid Polish notation: stack is empty, cannot get operand');
 
 	result := Stack.Pop();
 end;
 
-{ Handler for separating , }
-function OpSeparator(Stack: TPNNumberStack): TNumber;
+function NextList(Stack: TPNCalculationStack): TNumberList;
 begin
-	// this does nothing (as is should)
-	result := NextArg(Stack);
+	if Stack.Empty() then
+		raise EStackError.Create('Invalid Polish notation: stack is empty, cannot get operand');
+
+	result := Stack.PopList();
+end;
+
+{ Handler for separating , }
+procedure OpSeparator(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+begin
+	List := NextList(Stack);
+	while List.Count > 1 do
+		Stack.AddToTop(List.Pop);
+
+	Stack.AddToTop(List.Number);
 end;
 
 { Handler for unary - }
-function OpMinus(Stack: TPNNumberStack): TNumber;
+procedure OpMinus(Stack: TPNCalculationStack);
 begin
-	result := -1 * NextArg(Stack);
+	Stack.Push(-1 * NextArg(Stack));
 end;
 
 { Handler for function ln }
-function OpLogN(Stack: TPNNumberStack): TNumber;
+procedure OpLogN(Stack: TPNCalculationStack);
 begin
-	result := LnXP1(NextArg(Stack));
+	Stack.Push(LnXP1(NextArg(Stack)));
 end;
 
 { Handler for function log }
-function OpLog(Stack: TPNNumberStack): TNumber;
+procedure OpLog(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
 begin
-	result := NextArg(Stack);
-	result := LogN(result, NextArg(Stack));
+	List := NextList(Stack);
+	if List.Count <> 2 then
+		raise EStackError.Create('Expected list of 2 elements, got ' + IntToStr(List.Count));
+
+	Stack.Push(LogN(List.Pop, List.Number));
 end;
 
 { Handler for + }
-function OpAddition(Stack: TPNNumberStack): TNumber;
+procedure OpAddition(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack);
-	result += NextArg(Stack);
+	Stack.Push(NextArg(Stack) + NextArg(Stack));
 end;
 
 { Handler for - }
-function OpSubtraction(Stack: TPNNumberStack): TNumber;
+procedure OpSubtraction(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack);
-	result -= NextArg(Stack);
+	Stack.Push(NextArg(Stack) - NextArg(Stack));
 end;
 
 { Handler for * }
-function OpMultiplication(Stack: TPNNumberStack): TNumber;
+procedure OpMultiplication(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack);
-	result *= NextArg(Stack);
+	Stack.Push(NextArg(Stack) * NextArg(Stack));
 end;
 
 { Handler for / }
-function OpDivision(Stack: TPNNumberStack): TNumber;
+procedure OpDivision(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack);
-	result /= NextArg(Stack);
+	Stack.Push(NextArg(Stack) / NextArg(Stack));
 end;
 
 { Handler for ^ }
-function OpPower(Stack: TPNNumberStack): TNumber;
+procedure OpPower(Stack: TPNCalculationStack);
+var
+	LNum: TNumber;
 begin
-	result := NextArg(Stack);
-	result := result ** NextArg(Stack);
+	LNum := NextArg(Stack);
+	Stack.Push(LNum ** NextArg(Stack));
 end;
 
 { Handler for % }
-function OpModulo(Stack: TPNNumberStack): TNumber;
+procedure OpModulo(Stack: TPNCalculationStack);
+var
+	LNum: TNumber;
 begin
-	result := NextArg(Stack);
-	result := FMod(result, NextArg(Stack));
+	LNum := NextArg(Stack);
+	Stack.Push(FMod(LNum, NextArg(Stack)));
 end;
 
 { Handler for // }
-function OpDiv(Stack: TPNNumberStack): TNumber;
+procedure OpDiv(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack);
-	result := Floor64(result / NextArg(Stack));
+	Stack.Push(Floor64(NextArg(Stack) / NextArg(Stack)));
 end;
 
 { Handler for function sqrt }
-function OpSqrt(Stack: TPNNumberStack): TNumber;
+procedure OpSqrt(Stack: TPNCalculationStack);
 begin
-	result := NextArg(Stack) ** 0.5;
+	Stack.Push(NextArg(Stack) ** 0.5);
 end;
 
 { Handler for function sin }
-function OpSin(Stack: TPNNumberStack): TNumber;
+procedure OpSin(Stack: TPNCalculationStack);
 begin
-	result := Sin(NextArg(Stack));
+	Stack.Push(Sin(NextArg(Stack)));
 end;
 
 { Handler for function cos }
-function OpCos(Stack: TPNNumberStack): TNumber;
+procedure OpCos(Stack: TPNCalculationStack);
 begin
-	result := Cos(NextArg(Stack));
+	Stack.Push(Cos(NextArg(Stack)));
 end;
 
 { Handler for function tan }
-function OpTan(Stack: TPNNumberStack): TNumber;
+procedure OpTan(Stack: TPNCalculationStack);
 begin
-	result := Tan(NextArg(Stack));
+	Stack.Push(Tan(NextArg(Stack)));
 end;
 
 { Handler for function cot }
-function OpCot(Stack: TPNNumberStack): TNumber;
+procedure OpCot(Stack: TPNCalculationStack);
 begin
-	result := Cotan(NextArg(Stack));
+	Stack.Push(Cotan(NextArg(Stack)));
 end;
 
 { Handler for function arcsin }
-function OpArcSin(Stack: TPNNumberStack): TNumber;
+procedure OpArcSin(Stack: TPNCalculationStack);
 begin
-	result := ArcSin(NextArg(Stack));
+	Stack.Push(ArcSin(NextArg(Stack)));
 end;
 
 { Handler for function arccos }
-function OpArcCos(Stack: TPNNumberStack): TNumber;
+procedure OpArcCos(Stack: TPNCalculationStack);
 begin
-	result := ArcCos(NextArg(Stack));
+	Stack.Push(ArcCos(NextArg(Stack)));
 end;
 
 { Handler for function rand }
 { Note: Randomization must be performed by program running the calculator }
-function OpRand(Stack: TPNNumberStack): TNumber;
+procedure OpRand(Stack: TPNCalculationStack);
 begin
-	result := Random(Floor64(NextArg(Stack)));
+	Stack.Push(Random(Floor64(NextArg(Stack))));
 end;
 
 { Handler for function min }
-function OpMin(Stack: TPNNumberStack): TNumber;
+procedure OpMin(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+	LMin: TNumber;
 begin
-	result := Min(NextArg(Stack), NextArg(Stack));
+	List := NextList(Stack);
+
+	LMin := List.Number;
+	while List.Count > 1 do
+		LMin := Min(LMin, List.Pop);
+
+	Stack.Push(LMin);
 end;
 
 { Handler for function max }
-function OpMax(Stack: TPNNumberStack): TNumber;
+procedure OpMax(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+	LMax: TNumber;
 begin
-	result := Max(NextArg(Stack), NextArg(Stack));
+	List := NextList(Stack);
+
+	LMax := List.Number;
+	while List.Count > 1 do
+		LMax := Max(LMax, List.Pop);
+
+	Stack.Push(LMax);
 end;
 
 { Handler for function round }
-function OpRound(Stack: TPNNumberStack): TNumber;
+procedure OpRound(Stack: TPNCalculationStack);
 begin
-	result := Round(NextArg(Stack));
+	Stack.Push(Round(NextArg(Stack)));
 end;
 
 { Handler for function floor }
-function OpFloor(Stack: TPNNumberStack): TNumber;
+procedure OpFloor(Stack: TPNCalculationStack);
 begin
-	result := Floor64(NextArg(Stack));
+	Stack.Push(Floor64(NextArg(Stack)));
 end;
 
 { Handler for function ceil }
-function OpCeil(Stack: TPNNumberStack): TNumber;
+procedure OpCeil(Stack: TPNCalculationStack);
 begin
-	result := Ceil64(NextArg(Stack));
+	Stack.Push(Ceil64(NextArg(Stack)));
 end;
 
 { Handler for function sign }
-function OpSign(Stack: TPNNumberStack): TNumber;
+procedure OpSign(Stack: TPNCalculationStack);
 begin
-	result := Sign(NextArg(Stack));
+	Stack.Push(Sign(NextArg(Stack)));
 end;
 
 { Handler for function abs}
-function OpAbs(Stack: TPNNumberStack): TNumber;
+procedure OpAbs(Stack: TPNCalculationStack);
 begin
-	result := Abs(NextArg(Stack));
+	Stack.Push(Abs(NextArg(Stack)));
 end;
 
 { Handler for function fact }
-function OpFact(Stack: TPNNumberStack): TNumber;
+procedure OpFact(Stack: TPNCalculationStack);
 var
-	LInd: Int64;
+	I: Int64;
+	LFact: TNumber;
 begin
-	result := 1;
-	for LInd := 2 to Floor64(NextArg(Stack)) do
-		result *= LInd;
+	LFact := 1;
+	for I := 2 to Floor64(NextArg(Stack)) do
+		LFact *= I;
+
+	Stack.Push(LFact);
 end;
 
 { Handler for }
-function OpExp(Stack: TPNNumberStack): TNumber;
+procedure OpExp(Stack: TPNCalculationStack);
 begin
-	result := Exp(NextArg(Stack));
+	Stack.Push(Exp(NextArg(Stack)));
 end;
 
 { Apply handler }
-function ApplyOperation(Op: TOperationInfo; Stack: TPNNumberStack): TNumber;
+procedure ApplyOperation(Op: TOperationInfo; Stack: TPNCalculationStack);
 begin
 	case Op.OperationType of
-		otSeparator: result := OpSeparator(Stack);
-		otMinus: result := OpMinus(Stack);
-		otAddition: result := OpAddition(Stack);
-		otSubtraction: result := OpSubtraction(Stack);
-		otMultiplication: result := OpMultiplication(Stack);
-		otDivision: result := OpDivision(Stack);
-		otPower: result := OpPower(Stack);
-		otModulo: result := OpModulo(Stack);
-		otDiv: result := OpDiv(Stack);
-		otSqrt: result := OpSqrt(Stack);
-		otLogN: result := OpLogN(Stack);
-		otLog: result := OpLog(Stack);
-		otSin: result := OpSin(Stack);
-		otCos: result := OpCos(Stack);
-		otTan: result := OpTan(Stack);
-		otCot: result := OpCot(Stack);
-		otArcSin: result := OpArcSin(Stack);
-		otArcCos: result := OpArcCos(Stack);
-		otRand: result := OpRand(Stack);
-		otMin: result := OpMin(Stack);
-		otMax: result := OpMax(Stack);
-		otRound: result := OpRound(Stack);
-		otFloor: result := OpFloor(Stack);
-		otCeil: result := OpCeil(Stack);
-		otSign: result := OpSign(Stack);
-		otAbs: result := OpAbs(Stack);
-		otFact: result := OpFact(Stack);
-		otExp: result := OpExp(Stack);
+		otSeparator: OpSeparator(Stack);
+		otMinus: OpMinus(Stack);
+		otAddition: OpAddition(Stack);
+		otSubtraction: OpSubtraction(Stack);
+		otMultiplication: OpMultiplication(Stack);
+		otDivision: OpDivision(Stack);
+		otPower: OpPower(Stack);
+		otModulo: OpModulo(Stack);
+		otDiv: OpDiv(Stack);
+		otSqrt: OpSqrt(Stack);
+		otLogN: OpLogN(Stack);
+		otLog: OpLog(Stack);
+		otSin: OpSin(Stack);
+		otCos: OpCos(Stack);
+		otTan: OpTan(Stack);
+		otCot: OpCot(Stack);
+		otArcSin: OpArcSin(Stack);
+		otArcCos: OpArcCos(Stack);
+		otRand: OpRand(Stack);
+		otMin: OpMin(Stack);
+		otMax: OpMax(Stack);
+		otRound: OpRound(Stack);
+		otFloor: OpFloor(Stack);
+		otCeil: OpCeil(Stack);
+		otSign: OpSign(Stack);
+		otAbs: OpAbs(Stack);
+		otFact: OpFact(Stack);
+		otExp: OpExp(Stack);
 	end;
 end;
 
@@ -254,11 +292,11 @@ end;
 function Calculate(MainStack: TPNStack; Variables: TVariableMap): TNumber;
 var
 	MainStackCopy: TPNStack;
-	LLocalStack: TPNNumberStack;
+	LLocalStack: TPNCalculationStack;
 	LItem: TItem;
 
 begin
-	LLocalStack := TPNNumberStack.Create;
+	LLocalStack := TPNCalculationStack.Create;
 	MainStackCopy := TPNStack.Create;
 
 	try
@@ -268,7 +306,7 @@ begin
 			MainStackCopy.Push(LItem);
 
 			case LItem.ItemType of
-				itOperator: LLocalStack.Push(ApplyOperation(LItem.Operation, LLocalStack));
+				itOperator: ApplyOperation(LItem.Operation, LLocalStack);
 				itVariable: LLocalStack.Push(ResolveVariable(LItem, Variables));
 				itNumber: LLocalStack.Push(LItem.Number);
 			end;

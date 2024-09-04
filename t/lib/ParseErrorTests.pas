@@ -7,13 +7,11 @@ interface
 uses TAPSuite, TAP, PN, PNBase, SysUtils;
 
 type
-	TErrorClass = class of EParsingFailed;
-
 	TParseErrorSuite = class(TTAPSuite)
 	private
 		FCalc: TPN;
 
-		procedure TestForException(const InputString: String; ErrorClass: TErrorClass);
+		procedure TestForException(const InputString: String; ErrorClass: TParsingFailedClass);
 	public
 		constructor Create(); override;
 
@@ -30,7 +28,7 @@ type
 
 implementation
 
-procedure TParseErrorSuite.TestForException(const InputString: String; ErrorClass: TErrorClass);
+procedure TParseErrorSuite.TestForException(const InputString: String; ErrorClass: TParsingFailedClass);
 begin
 	try
 		FCalc.ParseString(InputString);
