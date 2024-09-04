@@ -19,6 +19,7 @@ type
 
 		procedure GithubIssue1Test();
 		procedure GithubIssue2Test();
+		procedure GithubIssue3Test();
 	end;
 
 implementation
@@ -32,6 +33,7 @@ begin
 
 	Scenario(@self.GithubIssue1Test, 'Error from github#1 should be fixed');
 	Scenario(@self.GithubIssue2Test, 'Error from github#2 should be fixed');
+	Scenario(@self.GithubIssue3Test, 'Error from github#3 should be fixed');
 end;
 
 procedure TIssuesSuite.Setup();
@@ -56,6 +58,17 @@ begin
 	FCalc.ParseString('fact(2) + fact(2) + fact(2)');
 
 	TestWithin(FCalc.GetResult, 6, cSmallPrecision, 'result ok');
+end;
+
+procedure TIssuesSuite.GithubIssue3Test();
+begin
+	try
+		FCalc.ParseString('15 lol');
+		TestFail('Parsing should result in an error');
+	except
+		on E: EParsingFailed do TestPass('Got expected error with message: ' + E.Message);
+		on E: Exception do TestFail('Got unexpected error with message: ' + E.Message);
+	end;
 end;
 
 end.

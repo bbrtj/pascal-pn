@@ -105,7 +105,7 @@ time ./cli -p "2.81 + 3E5 / 5 * var1 ^ 4 - (8.81 - 16 * 32 + (51 * 49.999))" -v 
 ```
 
 Benchmarking on a T480 machine with i7-8650U on FreeBSD 14.1 has shown around
-16 microseconds is required to do the entire parsing and calculation of the
+12 microseconds is required to do the entire parsing and calculation of the
 expression above.
 
 ## Author and License

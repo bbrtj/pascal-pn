@@ -261,6 +261,7 @@ begin
 		Inc(I);
 		OldI := I;
 		LParsed := ParseNumber(Txt, I);
+
 		if (OldI = I) or (LParsed.Base <> 10) then I := OldI - 1
 		else result := result * Power(10, LParsed.Sign * LParsed.Value);
 	end;

@@ -344,16 +344,23 @@ begin
 	LPartialResult := ParseOperand();
 	if SuccessBacktrack(LPartialResult, LAtBacktrack) then begin
 		LFirst := LPartialResult;
+
+		// We successfully parsed the operand, so there's no need to backtrack
+		// before it anymore
+		LAtBacktrack := GAt;
 		LPartialResult := ParseOp(ocInfix);
 
-		if LPartialResult = nil then exit(LFirst);
+		// if we failed to parse an operator, backtrack before what we parsed
+		// and exit with the operand. Stuff on the right are optional after the
+		// operand
+		if not SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LFirst);
 
 		LOp := LPartialResult;
 		LPartialResult := ParseStatement();
 		SuccessException(LPartialResult, EInvalidStatement, 'Invalid statement');
 
 		// No need to check for precedence on left argument, as we
-		// parse left to right (sfNotOperation on first)
+		// parse left to right
 		LOp.Left := LFirst;
 		LOp.Right := LPartialResult;
 
