@@ -36,6 +36,7 @@ var
 	I: Int32;
 	Variable: TVariable;
 	ValCode: UInt32;
+	Param: String;
 
 	function HasNextParam(): Boolean;
 	begin
@@ -58,7 +59,8 @@ begin
 
 	I := 0;
 	while HasNextParam() do begin
-		case NextParam() of
+		Param := NextParam();
+		case Param of
 			'-h', '--help': result.Actions += [aHelp];
 			'-e', '--export': result.Actions += [aExport];
 			'-b', '--bench': begin
@@ -84,7 +86,9 @@ begin
 				end
 				else
 					raise Exception.Create('Value for variable ' + Variable.Name + ' is not a number');
-			end;
+			end
+			else
+				raise Exception.Create('Unknown parameter ' + Param);
 		end;
 	end;
 end;
