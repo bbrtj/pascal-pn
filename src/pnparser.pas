@@ -181,20 +181,16 @@ function ParseOpeningBrace(): Boolean;
 begin
 	SkipWhiteSpace();
 	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = '(');
-	if result then begin
+	if result then
 		inc(GAt);
-		SkipWhiteSpace();
-	end;
 end;
 
 function ParseClosingBrace(): Boolean;
 begin
 	SkipWhiteSpace();
 	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = ')');
-	if result then begin
+	if result then
 		inc(GAt);
-		SkipWhiteSpace();
-	end;
 end;
 
 function ParseNumber(): TPNNode;
@@ -208,10 +204,8 @@ begin
 	LStart := GAt;
 	LNumber := FastStrToFloat(GInput, GAt);
 
-	if GAt > LStart then begin
+	if GAt > LStart then
 		result := ManagedNode(MakeItem(LNumber), LStart);
-		SkipWhiteSpace();
-	end;
 end;
 
 function ParseVariableName(): TPNNode;
@@ -231,7 +225,6 @@ begin
 	end;
 
 	result := ManagedNode(MakeItem(LVarName), LStart);
-	SkipWhiteSpace();
 end;
 
 function ParseBlock(): TPNNode;
@@ -389,6 +382,7 @@ begin
 
 	try
 		LNode := ParseStatement();
+		SkipWhiteSpace();
 		if (LNode = nil) or IsWithinInput() then
 			ReportException(EParsingFailed, 'Couldn''t parse the calculation');
 
@@ -412,6 +406,7 @@ begin
 
 	try
 		LNode := ParseVariableName;
+		SkipWhiteSpace();
 
 		if (LNode = nil) or IsWithinInput() then
 			ReportException(EInvalidVariableName, 'Invalid variable name ' + GInput);

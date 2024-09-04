@@ -13,6 +13,7 @@ type
 
 		procedure CreateTest();
 		procedure ObviousCalcTest();
+		procedure WhiteSpaceTest();
 		procedure ParsedAtTest();
 		procedure FastStrToFloatTest();
 	end;
@@ -29,6 +30,7 @@ begin
 
 	Scenario(@self.CreateTest, 'should construct and destruct');
 	Scenario(@self.ObviousCalcTest, 'should parse a very simple calculation');
+	Scenario(@self.WhiteSpaceTest, 'should not be bothered by whitespace');
 	Scenario(@self.ParsedAtTest, 'should remember string offsets where it found tokens');
 	Scenario(@self.FastStrToFloatTest, 'should parse numbers from strings');
 end;
@@ -37,7 +39,6 @@ procedure TBaseSuite.CreateTest();
 var
 	LCalc: TPN;
 begin
-
 	try
 		LCalc := TPN.Create;
 		LCalc.Free;
@@ -59,6 +60,17 @@ begin
 
 	Fatal;
 	TestWithin(LCalc.GetResult, 4, cSmallPrecision, 'result ok');
+	LCalc.Free;
+end;
+
+procedure TBaseSuite.WhiteSpaceTest();
+var
+	LCalc: TPN;
+begin
+	LCalc := TPN.Create;
+	LCalc.ParseString('   2   +   2    *abs (   -2   )  ');
+
+	TestWithin(LCalc.GetResult, 6, cSmallPrecision, 'result ok');
 	LCalc.Free;
 end;
 
