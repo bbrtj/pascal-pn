@@ -226,6 +226,38 @@ begin
 	Stack.Push(LMax);
 end;
 
+{ Handler for function sum }
+procedure OpSum(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+	LSum: TNumber;
+begin
+	List := NextList(Stack);
+
+	LSum := List.Number;
+	while List.Count > 1 do
+		LSum += List.Pop;
+
+	Stack.Push(LSum);
+end;
+
+{ Handler for function avg }
+procedure OpAvg(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+	LSum: TNumber;
+	LCount: UInt32;
+begin
+	List := NextList(Stack);
+
+	LSum := List.Number;
+	LCount := List.Count;
+	while List.Count > 1 do
+		LSum += List.Pop;
+
+	Stack.Push(LSum / LCount);
+end;
+
 { Handler for function round }
 procedure OpRound(Stack: TPNCalculationStack);
 begin
@@ -351,6 +383,8 @@ begin
 		TFullOperationInfo.Create('**',      @OpPower,           ocInfix,   30)
 			.WithHelp('power, a to the power of b'),
 
+		TFullOperationInfo.Create('-',       @OpMinus,           ocPrefix,  255)
+			.WithHelp('unary minus, yielding opposite number'),
 		TFullOperationInfo.Create('sqrt',    @OpSqrt,            ocPrefix,  2)
 			.WithHelp('f(x), square root of x'),
 		TFullOperationInfo.Create('ln',      @OpLogN,            ocPrefix,  2)
@@ -371,10 +405,6 @@ begin
 			.WithHelp('f(x), arcus cosinus of x'),
 		TFullOperationInfo.Create('rand',    @OpRand,            ocPrefix,  2)
 			.WithHelp('f(x), random integer from 0 to x - 1'),
-		TFullOperationInfo.Create('min',     @OpMin,             ocPrefix,  2)
-			.WithHelp('f(list), smallest value in a list'),
-		TFullOperationInfo.Create('max',     @OpMax,             ocPrefix,  2)
-			.WithHelp('f(list), largest value in a list'),
 		TFullOperationInfo.Create('round',   @OpRound,           ocPrefix,  2)
 			.WithHelp('f(x), rounds x to the nearest integer'),
 		TFullOperationInfo.Create('floor',   @OpFloor,           ocPrefix,  2)
@@ -389,8 +419,15 @@ begin
 			.WithHelp('f(x), returns factorial of x'),
 		TFullOperationInfo.Create('exp',     @OpExp,             ocPrefix,  2)
 			.WithHelp('f(x), returns exponent of x'),
-		TFullOperationInfo.Create('-',       @OpMinus,           ocPrefix,  255)
-			.WithHelp('unary minus, yielding opposite number')
+
+		TFullOperationInfo.Create('min',     @OpMin,             ocPrefix,  2)
+			.WithHelp('f(list), smallest value in a list'),
+		TFullOperationInfo.Create('max',     @OpMax,             ocPrefix,  2)
+			.WithHelp('f(list), largest value in a list'),
+		TFullOperationInfo.Create('sum',     @OpSum,             ocPrefix,  2)
+			.WithHelp('f(list), sum of list values'),
+		TFullOperationInfo.Create('avg',     @OpAvg,             ocPrefix,  2)
+			.WithHelp('f(list), average of list values')
 	];
 
 	for LOC in TOperationCategory do begin

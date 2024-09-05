@@ -32,6 +32,7 @@ type
 		procedure FactorialTest();
 		procedure ExpTest();
 		procedure MinMaxTest();
+		procedure SumAvgTest();
 		procedure SignTest();
 		procedure AbsTest();
 		procedure RoundTest();
@@ -64,6 +65,7 @@ begin
 	Scenario(@self.FactorialTest, 'should calculate factorial');
 	Scenario(@self.ExpTest, 'should calculate exponent');
 	Scenario(@self.MinMaxTest, 'should calculate min/max');
+	Scenario(@self.SumAvgTest, 'should calculate sum/avg');
 	Scenario(@self.SignTest, 'should calculate sign of a variable');
 	Scenario(@self.AbsTest, 'should calculate absolute value');
 	Scenario(@self.RoundTest, 'should be able to perform rounding');
@@ -227,6 +229,15 @@ begin
 
 	FCalc.ParseString('max 6, 8, 7, -3, 15, 0');
 	TestWithin(FCalc.GetResult, 15, cSmallPrecision, 'max with many arguments');
+end;
+
+procedure TCalculationsSuite.SumAvgTest();
+begin
+	FCalc.ParseString('sum 6, 8, 7, -3, 15, 0');
+	TestWithin(FCalc.GetResult, 33, cSmallPrecision, 'sum');
+
+	FCalc.ParseString('avg 6, 8, 7, -3, 15, 0');
+	TestWithin(FCalc.GetResult, 33 / 6, cSmallPrecision, 'avg');
 end;
 
 procedure TCalculationsSuite.SignTest();
