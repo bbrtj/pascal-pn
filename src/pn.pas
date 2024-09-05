@@ -101,7 +101,7 @@ end;
 
 function TPN.Help(): String;
 begin
-	result := TOperationInfo.Help();
+	result := TOperationInfo.FullHelp();
 end;
 
 end.

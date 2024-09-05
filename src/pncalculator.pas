@@ -9,10 +9,40 @@ unit PNCalculator;
 interface
 
 uses
-	Math, SysUtils,
+	Math, SysUtils, FGL,
 	PNStack, PNBase;
 
 function Calculate(MainStack: TPNStack; Variables: TVariableMap): TNumber;
+
+type
+	TOperationInfoStore = class
+	public
+		type
+			TOperationInfos = Array of TOperationInfo;
+			TOperationMap = specialize TFPGMap<TOperatorName, TOperationInfo>;
+			TOperationInfoMap = Array [TOperationCategory] of TOperationMap;
+
+		class var
+			SList: TOperationInfos;
+			SMap: TOperationInfoMap;
+
+		class constructor Create();
+		class destructor Destroy;
+	end;
+
+	TOperationRunner = procedure(Stack: TPNCalculationStack);
+
+	TFullOperationInfo = class(TOperationInfo)
+	strict private
+		FRunner: TOperationRunner;
+
+	public
+		constructor Create(AOperatorName: TOperatorName; ARunner: TOperationRunner;
+			OC: TOperationCategory; APriority: Byte);
+
+		property Runner: TOperationRunner read FRunner write FRunner;
+
+	end;
 
 implementation
 
@@ -245,40 +275,6 @@ begin
 	Stack.Push(Exp(NextArg(Stack)));
 end;
 
-{ Apply handler }
-procedure ApplyOperation(Op: TOperationInfo; Stack: TPNCalculationStack);
-begin
-	case Op.OperationType of
-		otSeparator: OpSeparator(Stack);
-		otMinus: OpMinus(Stack);
-		otAddition: OpAddition(Stack);
-		otSubtraction: OpSubtraction(Stack);
-		otMultiplication: OpMultiplication(Stack);
-		otDivision: OpDivision(Stack);
-		otPower: OpPower(Stack);
-		otModulo: OpModulo(Stack);
-		otDiv: OpDiv(Stack);
-		otSqrt: OpSqrt(Stack);
-		otLogN: OpLogN(Stack);
-		otLog: OpLog(Stack);
-		otSin: OpSin(Stack);
-		otCos: OpCos(Stack);
-		otTan: OpTan(Stack);
-		otCot: OpCot(Stack);
-		otArcSin: OpArcSin(Stack);
-		otArcCos: OpArcCos(Stack);
-		otRand: OpRand(Stack);
-		otMin: OpMin(Stack);
-		otMax: OpMax(Stack);
-		otRound: OpRound(Stack);
-		otFloor: OpFloor(Stack);
-		otCeil: OpCeil(Stack);
-		otSign: OpSign(Stack);
-		otAbs: OpAbs(Stack);
-		otFact: OpFact(Stack);
-		otExp: OpExp(Stack);
-	end;
-end;
 
 { Tries to fetch a variable value from TVariableMap }
 function ResolveVariable(const Item: TItem; Variables: TVariableMap): TNumber;
@@ -306,7 +302,7 @@ begin
 			MainStackCopy.Push(LItem);
 
 			case LItem.ItemType of
-				itOperator: ApplyOperation(LItem.Operation, LLocalStack);
+				itOperator: TFullOperationInfo(LItem.Operation).Runner(LLocalStack);
 				itVariable: LLocalStack.Push(ResolveVariable(LItem, Variables));
 				itNumber: LLocalStack.Push(LItem.Number);
 			end;
@@ -324,6 +320,106 @@ begin
 		LLocalStack.Free;
 		MainStackCopy.Free;
 	end;
+end;
+
+class constructor TOperationInfoStore.Create();
+var
+	LInfo: TOperationInfo;
+	LOC: TOperationCategory;
+begin
+	TOperationInfoStore.SList := [
+		TFullOperationInfo.Create(',',       @OpSeparator,       ocInfix,   5)
+			.WithHelp('separates values and creates a list'),
+		TFullOperationInfo.Create('+',       @OpAddition,        ocInfix,   10)
+			.WithHelp('addition, a plus b'),
+		TFullOperationInfo.Create('-',       @OpSubtraction,     ocInfix,   10)
+			.WithHelp('subtraction, a minus b'),
+		TFullOperationInfo.Create('*',       @OpMultiplication,  ocInfix,   20)
+			.WithHelp('multiplication, a times b'),
+		TFullOperationInfo.Create('/',       @OpDivision,        ocInfix,   20)
+			.WithHelp('division, a divided by b'),
+		TFullOperationInfo.Create('%',       @OpModulo,          ocInfix,   20)
+			.WithHelp('modulo, the remainder of a divided by b'),
+		TFullOperationInfo.Create('mod',     @OpModulo,          ocInfix,   20)
+			.WithHelp('modulo, the remainder of a divided by b'),
+		TFullOperationInfo.Create('//',      @OpDiv,             ocInfix,   20)
+			.WithHelp('integer division, division without fraction'),
+		TFullOperationInfo.Create('div',     @OpDiv,             ocInfix,   20)
+			.WithHelp('integer division, division without fraction'),
+		TFullOperationInfo.Create('^',       @OpPower,           ocInfix,   30)
+			.WithHelp('power, a to the power of b'),
+		TFullOperationInfo.Create('**',      @OpPower,           ocInfix,   30)
+			.WithHelp('power, a to the power of b'),
+
+		TFullOperationInfo.Create('sqrt',    @OpSqrt,            ocPrefix,  2)
+			.WithHelp('f(x), square root of x'),
+		TFullOperationInfo.Create('ln',      @OpLogN,            ocPrefix,  2)
+			.WithHelp('f(x, y), x-based logarithm of y'),
+		TFullOperationInfo.Create('log',     @OpLog,             ocPrefix,  2)
+			.WithHelp('f(x), natural logarithm of x (E-based)'),
+		TFullOperationInfo.Create('sin',     @OpSin,             ocPrefix,  2)
+			.WithHelp('f(x), sinus of x'),
+		TFullOperationInfo.Create('cos',     @OpCos,             ocPrefix,  2)
+			.WithHelp('f(x), cosinus of x'),
+		TFullOperationInfo.Create('tan',     @OpTan,             ocPrefix,  2)
+			.WithHelp('f(x), tangent of x'),
+		TFullOperationInfo.Create('cot',     @OpCot,             ocPrefix,  2)
+			.WithHelp('f(x), cotangent of x'),
+		TFullOperationInfo.Create('arcsin',  @OpArcSin,          ocPrefix,  2)
+			.WithHelp('f(x), arcus sinus of x'),
+		TFullOperationInfo.Create('arccos',  @OpArcCos,          ocPrefix,  2)
+			.WithHelp('f(x), arcus cosinus of x'),
+		TFullOperationInfo.Create('rand',    @OpRand,            ocPrefix,  2)
+			.WithHelp('f(x), random integer from 0 to x - 1'),
+		TFullOperationInfo.Create('min',     @OpMin,             ocPrefix,  2)
+			.WithHelp('f(list), smallest value in a list'),
+		TFullOperationInfo.Create('max',     @OpMax,             ocPrefix,  2)
+			.WithHelp('f(list), largest value in a list'),
+		TFullOperationInfo.Create('round',   @OpRound,           ocPrefix,  2)
+			.WithHelp('f(x), rounds x to the nearest integer'),
+		TFullOperationInfo.Create('floor',   @OpFloor,           ocPrefix,  2)
+			.WithHelp('f(x), rounds x to the nearest smaller integer'),
+		TFullOperationInfo.Create('ceil',    @OpCeil,            ocPrefix,  2)
+			.WithHelp('f(x), rounds x to the nearest larger integer'),
+		TFullOperationInfo.Create('sign',    @OpSign,            ocPrefix,  2)
+			.WithHelp('f(x), returns 1, 0 or -1 for positive, zero or negative x'),
+		TFullOperationInfo.Create('abs',     @OpAbs,             ocPrefix,  2)
+			.WithHelp('f(x), returns absolute value of x'),
+		TFullOperationInfo.Create('fact',    @OpFact,            ocPrefix,  2)
+			.WithHelp('f(x), returns factorial of x'),
+		TFullOperationInfo.Create('exp',     @OpExp,             ocPrefix,  2)
+			.WithHelp('f(x), returns exponent of x'),
+		TFullOperationInfo.Create('-',       @OpMinus,           ocPrefix,  255)
+			.WithHelp('unary minus, yielding opposite number')
+	];
+
+	for LOC in TOperationCategory do begin
+		TOperationInfoStore.SMap[LOC] := TOperationInfoStore.TOperationMap.Create;
+		TOperationInfoStore.SMap[LOC].Sorted := True;
+		for LInfo in TOperationInfoStore.SList do begin
+			if (LInfo.OperationCategory = LOC) then
+				TOperationInfoStore.SMap[LOC].Add(LInfo.OperatorName, LInfo);
+		end;
+	end;
+end;
+
+class destructor TOperationInfoStore.Destroy();
+var
+	LInfo: TOperationInfo;
+	LOC: TOperationCategory;
+begin
+	for LInfo in TOperationInfoStore.SList do
+		LInfo.Free;
+
+	for LOC in TOperationCategory do
+		TOperationInfoStore.SMap[LOC].Free;
+end;
+
+constructor TFullOperationInfo.Create(AOperatorName: TOperatorName; ARunner: TOperationRunner;
+	OC: TOperationCategory; APriority: Byte);
+begin
+	inherited Create(AOperatorName, OC, APriority);
+	FRunner := ARunner;
 end;
 
 end.

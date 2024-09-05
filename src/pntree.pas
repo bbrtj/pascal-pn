@@ -28,7 +28,6 @@ type
 
 		function IsOperation(): Boolean;
 		function OperationPriority(): Byte;
-		function OperationType(): TOperationType;
 
 		function NextPreorder(): TPNNode;
 
@@ -81,12 +80,6 @@ end;
 function TPNNode.OperationPriority(): Byte;
 begin
 	result := FItem.Operation.Priority;
-end;
-
-{ Get the type of an operation stored }
-function TPNNode.OperationType(): TOperationType;
-begin
-	result := FItem.Operation.OperationType;
 end;
 
 { Traverse the tree Preorder }

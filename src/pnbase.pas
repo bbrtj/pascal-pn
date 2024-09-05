@@ -22,48 +22,27 @@ type
 	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
 
 	TOperationCategory = (ocPrefix, ocInfix);
-	TOperationType = (
-		otSeparator,    otMinus,           otAddition,
-		otSubtraction,  otMultiplication,  otDivision,
-		otPower,        otModulo,          otDiv,
-		otSqrt,         otLog,             otLogN,
-		otSin,          otCos,             otTan,
-		otCot,          otArcSin,          otArcCos,
-		otRand,         otMin,             otMax,
-		otRound,        otFloor,           otCeil,
-		otSign,         otAbs,             otFact,
-		otExp
-	);
 
 	TOperationInfo = class
 	strict private
 		FOperatorName: TOperatorName;
 		FPriority: Byte;
-		FOperationType: TOperationType;
 		FOperationCategory: TOperationCategory;
 		FSymbolic: Boolean;
-
-	private
-		type
-			TOperationInfos = Array of TOperationInfo;
-			TOperationMap = specialize TFPGMap<TOperatorName, TOperationInfo>;
-			TOperationInfoMap = Array [TOperationCategory] of TOperationMap;
-
-		class var
-			SList: TOperationInfos;
-			SMap: TOperationInfoMap;
+		FHelp: String;
 
 	public
-		constructor Create(OperatorName: TOperatorName; OT: TOperationType; OC: TOperationCategory; Priority: Byte);
+		constructor Create(AOperatorName: TOperatorName; OC: TOperationCategory; APriority: Byte);
 
 		class function Find(const OperatorName: TOperatorName; OC: TOperationCategory): TOperationInfo;
 		class function Check(const OperatorName: TOperatorName): Boolean;
-		class function LongestSymbolic(OC: TOperationCategory): Byte;
-		class function Help(Formatted: Boolean = True): String;
+		class function FullHelp(Formatted: Boolean = True): String;
 
+		function WithHelp(const AHelp: String): TOperationInfo;
+
+		property Help: String read FHelp write FHelp;
 		property OperatorName: TOperatorName read FOperatorName;
 		property Priority: Byte read FPriority;
-		property OperationType: TOperationType read FOperationType;
 		property OperationCategory: TOperationCategory read FOperationCategory;
 	end;
 
@@ -103,37 +82,7 @@ function FastStrToFloat(const Txt: String; var Offset: UInt32): TNumber;
 
 implementation
 
-const
-	cOperationTypeDesc: Array[otSeparator .. otExp] of String = (
-		{ otSeparator } 'separates values and creates a list',
-		{ otMinus } 'unary minus, yielding opposite number',
-		{ otAddition } 'addition, a plus b',
-		{ otSubtraction } 'subtraction, a minus b',
-		{ otMultiplication } 'multiplication, a times b',
-		{ otDivision } 'division, a divided by b',
-		{ otPower } 'power, a to the power of b',
-		{ otModulo } 'modulo, the remainder of a divided by b',
-		{ otDiv } 'integer division, division without fraction',
-		{ otSqrt } 'f(x), square root of x',
-		{ otLog } 'f(x, y), x-based logarithm of y',
-		{ otLogN } 'f(x), natural logarithm of x (E-based)',
-		{ otSin } 'f(x), sinus of x',
-		{ otCos } 'f(x), cosinus of x',
-		{ otTan } 'f(x), tangent of x',
-		{ otCot } 'f(x), cotangent of x',
-		{ otArcSin } 'f(x), arcus sinus of x',
-		{ otArcCos } 'f(x), arcus cosinus of x',
-		{ otRand } 'f(x), random integer from 0 to x - 1',
-		{ otMin } 'f(list), smallest value in a list',
-		{ otMax } 'f(list), largest value in a list',
-		{ otRound } 'f(x), rounds x to the nearest integer',
-		{ otFloor } 'f(x), rounds x to the nearest smaller integer',
-		{ otCeil } 'f(x), rounds x to the nearest larger integer',
-		{ otSign } 'f(x), returns 1, 0 or -1 for positive, zero or negative x',
-		{ otAbs } 'f(x), returns absolute value of x',
-		{ otFact } 'f(x), returns factorial of x',
-		{ otExp } 'f(x), returns exponent of x'
-	);
+uses PNCalculator;
 
 var
 	GFloatFormat: TFormatSettings;
@@ -327,17 +276,16 @@ begin
 	end;
 end;
 
-constructor TOperationInfo.Create(OperatorName: TOperatorName; OT: TOperationType; OC: TOperationCategory; Priority: Byte);
+constructor TOperationInfo.Create(AOperatorName: TOperatorName; OC: TOperationCategory; APriority: Byte);
 var
 	LChar: Char;
 begin
-	FOperatorName := OperatorName;
-	FOperationType := OT;
+	FOperatorName := AOperatorName;
 	FOperationCategory := OC;
-	FPriority := Priority;
+	FPriority := APriority;
 
 	FSymbolic := True;
-	for LChar in OperatorName do begin
+	for LChar in AOperatorName do begin
 		if IsLetterOrDigit(LChar) or (LChar = '_') then begin
 			FSymbolic := False;
 			break;
@@ -349,8 +297,8 @@ class function TOperationInfo.Find(const OperatorName: TOperatorName; OC: TOpera
 var
 	LFound: Integer;
 begin
-	if SMap[OC].Find(OperatorName, LFound) then
-		result := SMap[OC].Data[LFound]
+	if TOperationInfoStore.SMap[OC].Find(OperatorName, LFound) then
+		result := TOperationInfoStore.SMap[OC].Data[LFound]
 	else
 		result := nil;
 end;
@@ -360,103 +308,42 @@ var
 	LInfo: TOperationInfo;
 begin
 	result := False;
-	for LInfo in SList do begin
+	for LInfo in TOperationInfoStore.SList do begin
 		if LInfo.FOperatorName = OperatorName then
 			exit(True);
 	end;
 end;
 
-class function TOperationInfo.LongestSymbolic(OC: TOperationCategory): Byte;
-var
-	LInfo: TOperationInfo;
-begin
-	result := 0;
-	for LInfo in SList do begin
-		if LInfo.FSymbolic and (LInfo.FOperationCategory = OC) and (length(LInfo.FOperatorName) > result) then
-			result := length(LInfo.FOperatorName);
-	end;
-end;
-
-class function TOperationInfo.Help(Formatted: Boolean = True): String;
+class function TOperationInfo.FullHelp(Formatted: Boolean = True): String;
 var
 	LInfo: TOperationInfo;
 	LLongest: Byte;
 begin
 	LLongest := 0;
-	for LInfo in SList do begin
+	for LInfo in TOperationInfoStore.SList do begin
 		if length(LInfo.OperatorName) > LLongest then
 			LLongest := length(LInfo.OperatorName);
 	end;
 
 	result := '';
-	for LInfo in SList do begin
+	for LInfo in TOperationInfoStore.SList do begin
 		if Formatted then
 			result += Format('[ %-' + IntToStr(LLongest) + 's ]: ', [LInfo.OperatorName])
 		else
 			result += LInfo.OperatorName + ': ';
 
-		result += cOperationTypeDesc[LInfo.OperationType] + sLineBreak;
+		result += LInfo.Help + sLineBreak;
 	end;
 end;
 
-var
-	GInfo: TOperationInfo;
-	GOC: TOperationCategory;
+{ helper for inline construction }
+function TOperationInfo.WithHelp(const AHelp: String): TOperationInfo;
+begin
+	self.Help := AHelp;
+	result := self;
+end;
 
 initialization
 	GFloatFormat.DecimalSeparator := cDecimalSeparator;
-
-	TOperationInfo.SList := [
-		TOperationInfo.Create(',',       otSeparator,       ocInfix,   5),
-		TOperationInfo.Create('+',       otAddition,        ocInfix,   10),
-		TOperationInfo.Create('-',       otSubtraction,     ocInfix,   10),
-		TOperationInfo.Create('*',       otMultiplication,  ocInfix,   20),
-		TOperationInfo.Create('/',       otDivision,        ocInfix,   20),
-		TOperationInfo.Create('%',       otModulo,          ocInfix,   20),
-		TOperationInfo.Create('mod',     otModulo,          ocInfix,   20),
-		TOperationInfo.Create('//',      otDiv,             ocInfix,   20),
-		TOperationInfo.Create('div',     otDiv,             ocInfix,   20),
-		TOperationInfo.Create('^',       otPower,           ocInfix,   30),
-		TOperationInfo.Create('**',      otPower,           ocInfix,   30),
-
-		TOperationInfo.Create('sqrt',    otSqrt,            ocPrefix,  2),
-		TOperationInfo.Create('ln',      otLogN,            ocPrefix,  2),
-		TOperationInfo.Create('log',     otLog,             ocPrefix,  2),
-		TOperationInfo.Create('sin',     otSin,             ocPrefix,  2),
-		TOperationInfo.Create('cos',     otCos,             ocPrefix,  2),
-		TOperationInfo.Create('tan',     otTan,             ocPrefix,  2),
-		TOperationInfo.Create('cot',     otCot,             ocPrefix,  2),
-		TOperationInfo.Create('arcsin',  otArcSin,          ocPrefix,  2),
-		TOperationInfo.Create('arccos',  otArcCos,          ocPrefix,  2),
-		TOperationInfo.Create('rand',    otRand,            ocPrefix,  2),
-		TOperationInfo.Create('min',     otMin,             ocPrefix,  2),
-		TOperationInfo.Create('max',     otMax,             ocPrefix,  2),
-		TOperationInfo.Create('round',   otRound,           ocPrefix,  2),
-		TOperationInfo.Create('floor',   otFloor,           ocPrefix,  2),
-		TOperationInfo.Create('ceil',    otCeil,            ocPrefix,  2),
-		TOperationInfo.Create('sign',    otSign,            ocPrefix,  2),
-		TOperationInfo.Create('abs',     otAbs,             ocPrefix,  2),
-		TOperationInfo.Create('fact',    otFact,            ocPrefix,  2),
-		TOperationInfo.Create('exp',     otExp,             ocPrefix,  2),
-		TOperationInfo.Create('-',       otMinus,           ocPrefix,  255)
-	];
-
-	for GOC in TOperationCategory do begin
-		TOperationInfo.SMap[GOC] := TOperationInfo.TOperationMap.Create;
-		TOperationInfo.SMap[GOC].Sorted := True;
-		for GInfo in TOperationInfo.SList do begin
-			if (GInfo.OperationCategory = GOC) then
-				TOperationInfo.SMap[GOC].Add(GInfo.OperatorName, GInfo);
-		end;
-	end;
-
-finalization
-	for GInfo in TOperationInfo.SList do
-		GInfo.Free;
-
-	for GOC in TOperationCategory do
-		TOperationInfo.SMap[GOC].Free;
-
-
 end.
 
