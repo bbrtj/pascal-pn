@@ -27,128 +27,159 @@ uses
 function Parse(const ParseInput: String): TPNStack;
 function ParseVariable(const ParseInput: String): String;
 
-implementation
+implementation // more internal interface below
 
 type
 	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctDecimalSeparator, ctBrace, ctSymbol);
-
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
-var
-	GInput: String;
-	GInputLength: UInt32;
-	GAt: UInt32;
-	GCleanup: TCleanupList;
-	GCharacterTypes: Array of TCharacterType;
+	TParseContext = class
+	strict private
+		FInput: String;
+		FInputLength: UInt32;
+		FAt: UInt32;
+		FCleanup: TCleanupList;
+		FCharacterTypes: Array of TCharacterType;
 
-procedure ReportException(AClass: TParsingFailedClass; const ExMsg: String); Inline;
-begin
-	raise AClass.Create(ExMsg + ' (at offset ' + IntToStr(GAt - 1) + ')');
-end;
+		function ManagedNode(Item: TItem; FoundAt: Int32): TPNNode; Inline;
+		function SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean; Inline;
+		procedure SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String); Inline;
+		function IsWithinInput(): Boolean; Inline;
+		function CharacterType(Position: UInt32): TCharacterType; Inline;
+		procedure SkipWhiteSpace(); Inline;
 
-procedure InitGlobals(const ParseInput: String);
+	public
+		constructor Create(const ParseInput: String);
+		destructor Destroy; override;
+
+		procedure ReportException(AClass: TParsingFailedClass; const ExMsg: String);
+		function Finished(): Boolean;
+
+		function ParseWord(): Boolean;
+		function ParseSymbol(): Boolean;
+		function ParseOp(OC: TOperationCategory): TPNNode;
+		function ParseOpeningBrace(): Boolean;
+		function ParseClosingBrace(): Boolean;
+		function ParseBlock(): TPNNode;
+		function ParseNumber(): TPNNode;
+		function ParseVariableName(): TPNNode;
+		function ParseOperand(): TPNNode;
+		function ParseStatement(): TPNNode;
+	end;
+
+{ implementation }
+
+constructor TParseContext.Create(const ParseInput: String);
 var
 	I: Int32;
 	LUnicodeStr: UnicodeString;
 begin
-	GInput := ParseInput;
+	FInput := ParseInput;
 	LUnicodeStr := UnicodeString(ParseInput);
-	GInputLength := Length(GInput);
-	GAt := 1;
+	FInputLength := Length(FInput);
+	FAt := 1;
 
-	if Length(LUnicodeStr) <> GInputLength then
+	if Length(LUnicodeStr) <> FInputLength then
 		ReportException(EParsingFailed, 'Non-ANSI input is not supported');
 
-	SetLength(GCharacterTypes, GInputLength);
-	for I := 0 to GInputLength - 1 do begin
+	SetLength(FCharacterTypes, FInputLength);
+	for I := 0 to FInputLength - 1 do begin
 		if IsWhiteSpace(LUnicodeStr[I + 1]) then
-			GCharacterTypes[I] := ctWhiteSpace
+			FCharacterTypes[I] := ctWhiteSpace
 		else if IsLetter(LUnicodeStr[I + 1]) or (LUnicodeStr[I + 1] = '_') then
-			GCharacterTypes[I] := ctLetter
+			FCharacterTypes[I] := ctLetter
 		else if IsDigit(LUnicodeStr[I + 1]) then
-			GCharacterTypes[I] := ctDigit
+			FCharacterTypes[I] := ctDigit
 		else if LUnicodeStr[I + 1] = cDecimalSeparator then
-			GCharacterTypes[I] := ctDecimalSeparator
+			FCharacterTypes[I] := ctDecimalSeparator
 		else if (LUnicodeStr[I + 1] = '(') or (LUnicodeStr[I + 1] = ')') then
-			GCharacterTypes[I] := ctBrace
+			FCharacterTypes[I] := ctBrace
 		else
-			GCharacterTypes[I] := ctSymbol
+			FCharacterTypes[I] := ctSymbol
 		;
 	end;
 
-	GCleanup := TCleanupList.Create;
+	FCleanup := TCleanupList.Create;
 end;
 
-procedure DeInitGlobals();
+destructor TParseContext.Destroy();
 begin
-	GCleanup.Free;
+	FCleanup.Free;
 end;
 
-function ManagedNode(Item: TItem; FoundAt: Int32): TPNNode; Inline;
+procedure TParseContext.ReportException(AClass: TParsingFailedClass; const ExMsg: String);
+begin
+	raise AClass.Create(ExMsg + ' (at offset ' + IntToStr(FAt - 1) + ')');
+end;
+
+function TParseContext.Finished(): Boolean;
+begin
+	SkipWhiteSpace();
+	result := not IsWithinInput();
+end;
+
+function TParseContext.ManagedNode(Item: TItem; FoundAt: Int32): TPNNode;
 begin
 	Item.ParsedAt := FoundAt;
 	result := TPNNode.Create(Item);
-	GCleanup.Add(result);
+	FCleanup.Add(result);
 end;
 
-function ParseStatement(): TPNNode;
-forward;
-
-function SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean; Inline;
+function TParseContext.SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean;
 begin
 	result := Parsed <> nil;
 
 	if not result then
-		GAt := Backtrack;
+		FAt := Backtrack;
 end;
 
-procedure SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String); Inline;
+procedure TParseContext.SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String);
 begin
 	if Parsed = nil then
 		ReportException(AClass, ExMsg);
 end;
 
-function IsWithinInput(): Boolean; Inline;
+function TParseContext.IsWithinInput(): Boolean;
 begin
-	result := GAt <= GInputLength;
+	result := FAt <= FInputLength;
 end;
 
-function CharacterType(Position: UInt32): TCharacterType; Inline;
+function TParseContext.CharacterType(Position: UInt32): TCharacterType;
 begin
-	result := GCharacterTypes[Position - 1];
+	result := FCharacterTypes[Position - 1];
 end;
 
-procedure SkipWhiteSpace(); Inline;
+procedure TParseContext.SkipWhiteSpace();
 begin
-	while IsWithinInput() and (CharacterType(GAt) = ctWhiteSpace) do
-		inc(GAt);
+	while IsWithinInput() and (CharacterType(FAt) = ctWhiteSpace) do
+		inc(FAt);
 end;
 
-function ParseWord(): Boolean;
+function TParseContext.ParseWord(): Boolean;
 begin
-	if not (IsWithinInput() and (CharacterType(GAt) = ctLetter)) then
+	if not (IsWithinInput() and (CharacterType(FAt) = ctLetter)) then
 		exit(False);
 
 	repeat
-		inc(GAt);
-	until not (IsWithinInput() and ((CharacterType(GAt) = ctLetter) or (CharacterType(GAt) = ctDigit)));
+		inc(FAt);
+	until not (IsWithinInput() and ((CharacterType(FAt) = ctLetter) or (CharacterType(FAt) = ctDigit)));
 
 	result := True;
 end;
 
-function ParseSymbol(): Boolean;
+function TParseContext.ParseSymbol(): Boolean;
 begin
-	if not (IsWithinInput() and (CharacterType(GAt) = ctSymbol)) then
+	if not (IsWithinInput() and (CharacterType(FAt) = ctSymbol)) then
 		exit(False);
 
 	repeat
-		inc(GAt);
-	until not (IsWithinInput() and (CharacterType(GAt) = ctSymbol));
+		inc(FAt);
+	until not (IsWithinInput() and (CharacterType(FAt) = ctSymbol));
 
 	result := True;
 end;
 
-function ParseOp(OC: TOperationCategory): TPNNode;
+function TParseContext.ParseOp(OC: TOperationCategory): TPNNode;
 var
 	LSymbol: Boolean;
 	LStart: UInt32;
@@ -156,19 +187,19 @@ var
 begin
 	SkipWhiteSpace;
 	result := nil;
-	LStart := GAt;
+	LStart := FAt;
 
 	// word operator or symbolic operator
 	LSymbol := not ParseWord;
 	if LSymbol and not ParseSymbol() then exit;
 
-	LOpInfo := TOperationInfo.Find(copy(GInput, LStart, GAt - LStart), OC);
+	LOpInfo := TOperationInfo.Find(copy(FInput, LStart, FAt - LStart), OC);
 
 	if (LOpInfo = nil) and LSymbol then begin
 		// extra treatment for symbols (because of cases like *-)
-		while GAt > LStart do begin
-			Dec(GAt);
-			LOpInfo := TOperationInfo.Find(copy(GInput, LStart, GAt - LStart), OC);
+		while FAt > LStart do begin
+			Dec(FAt);
+			LOpInfo := TOperationInfo.Find(copy(FInput, LStart, FAt - LStart), OC);
 			if LOpInfo <> nil then break;
 		end;
 	end;
@@ -177,23 +208,23 @@ begin
 		result := ManagedNode(MakeItem(LOpInfo), LStart);
 end;
 
-function ParseOpeningBrace(): Boolean;
+function TParseContext.ParseOpeningBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = '(');
+	result := IsWithinInput() and (CharacterType(FAt) = ctBrace) and (FInput[FAt] = '(');
 	if result then
-		inc(GAt);
+		inc(FAt);
 end;
 
-function ParseClosingBrace(): Boolean;
+function TParseContext.ParseClosingBrace(): Boolean;
 begin
 	SkipWhiteSpace();
-	result := IsWithinInput() and (CharacterType(GAt) = ctBrace) and (GInput[GAt] = ')');
+	result := IsWithinInput() and (CharacterType(FAt) = ctBrace) and (FInput[FAt] = ')');
 	if result then
-		inc(GAt);
+		inc(FAt);
 end;
 
-function ParseNumber(): TPNNode;
+function TParseContext.ParseNumber(): TPNNode;
 var
 	LStart: UInt32;
 	LNumber: TNumber;
@@ -201,37 +232,35 @@ begin
 	SkipWhiteSpace();
 	result := nil;
 
-	LStart := GAt;
-	LNumber := FastStrToFloat(GInput, GAt);
+	LStart := FAt;
+	LNumber := FastStrToFloat(FInput, FAt);
 
-	if GAt > LStart then
+	if FAt > LStart then
 		result := ManagedNode(MakeItem(LNumber), LStart);
 end;
 
-function ParseVariableName(): TPNNode;
+function TParseContext.ParseVariableName(): TPNNode;
 var
 	LStart: UInt32;
 	LVarName: TVariableName;
 begin
 	SkipWhiteSpace();
 
-	LStart := GAt;
+	LStart := FAt;
 	if not ParseWord() then exit(nil);
 
-	LVarName := copy(GInput, LStart, GAt - LStart);
+	LVarName := copy(FInput, LStart, FAt - LStart);
 	if TOperationInfo.Check(LVarName) then begin
-		GAt := LStart;
+		FAt := LStart;
 		exit(nil);
 	end;
 
 	result := ManagedNode(MakeItem(LVarName), LStart);
 end;
 
-function ParseBlock(): TPNNode;
-var
-	LAtBacktrack: UInt32;
+function TParseContext.ParseBlock(): TPNNode;
 begin
-	LAtBacktrack := GAt;
+	result := nil;
 
 	if ParseOpeningBrace() then begin
 		result := ParseStatement();
@@ -243,33 +272,17 @@ begin
 
 		// mark result with higher precedendce as it is in block
 		result.Grouped := True;
-		exit(result);
 	end;
-
-	GAt := LAtBacktrack;
-	result := nil;
 end;
 
-function ParseOperand(): TPNNode;
-var
-	LPartialResult: TPNNode;
-	LAtBacktrack: UInt32;
+function TParseContext.ParseOperand(): TPNNode;
 begin
-	LAtBacktrack := GAt;
-
-	LPartialResult := ParseBlock();
-	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
-
-	LPartialResult := ParseNumber();
-	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
-
-	LPartialResult := ParseVariableName();
-	if SuccessBacktrack(LPartialResult, LAtBacktrack) then exit(LPartialResult);
-
-	result := nil;
+	result := ParseBlock();
+	if result = nil then result := ParseNumber();
+	if result = nil then result := ParseVariableName();
 end;
 
-function ParseStatement(): TPNNode;
+function TParseContext.ParseStatement(): TPNNode;
 var
 	LPartialResult, LOp, LFirst: TPNNode;
 	LAtBacktrack: UInt32;
@@ -302,7 +315,7 @@ var
 	end;
 
 begin
-	LAtBacktrack := GAt;
+	LAtBacktrack := FAt;
 
 	LPartialResult := ParseOp(ocPrefix);
 	if SuccessBacktrack(LPartialResult, LAtBacktrack) then begin
@@ -312,6 +325,7 @@ begin
 		SuccessException(LPartialResult, EInvalidStatement, 'Invalid statement');
 
 		LOp.Right := LPartialResult;
+		result := LOp;
 
 		// check grouping
 		LPartialResult := LeftmostGrouped(LOp);
@@ -319,7 +333,6 @@ begin
 			result := LOp.Right;
 			LPartialResult.Parent.Left := LOp;
 			LOp.Right := LPartialResult;
-			exit(result);
 		end;
 
 		// check precedence
@@ -328,10 +341,9 @@ begin
 			result := LOp.Right;
 			LOp.Right := LPartialResult.Left;
 			LPartialResult.Left := LOp;
-			exit(result);
 		end;
 
-		exit(LOp);
+		exit(result);
 	end;
 
 	LPartialResult := ParseOperand();
@@ -340,7 +352,7 @@ begin
 
 		// We successfully parsed the operand, so there's no need to backtrack
 		// before it anymore
-		LAtBacktrack := GAt;
+		LAtBacktrack := FAt;
 		LPartialResult := ParseOp(ocInfix);
 
 		// if we failed to parse an operator, backtrack before what we parsed
@@ -356,6 +368,7 @@ begin
 		// parse left to right
 		LOp.Left := LFirst;
 		LOp.Right := LPartialResult;
+		result := LOp;
 
 		// check precedence
 		LPartialResult := LeftmostWithLowerPriority(LOp);
@@ -363,9 +376,7 @@ begin
 			result := LOp.Right;
 			LOp.Right := LPartialResult.Left;
 			LPartialResult.Left := LOp;
-		end
-		else
-			result := LOp;
+		end;
 
 		exit(result);
 	end;
@@ -377,23 +388,23 @@ end;
 function Parse(const ParseInput: String): TPNStack;
 var
 	LNode: TPNNode;
+	LContext: TParseContext;
 begin
-	InitGlobals(ParseInput);
+	LContext := TParseContext.Create(ParseInput);
 
 	try
-		LNode := ParseStatement();
-		SkipWhiteSpace();
-		if (LNode = nil) or IsWithinInput() then
-			ReportException(EParsingFailed, 'Couldn''t parse the calculation');
+		LNode := LContext.ParseStatement();
+
+		if (LNode = nil) or not LContext.Finished() then
+			LContext.ReportException(EParsingFailed, 'Couldn''t parse the calculation');
 
 		result := TPNStack.Create;
 		while LNode <> nil do begin
 			result.Push(LNode.Item);
 			LNode := LNode.NextPreorder();
 		end;
-
 	finally
-		DeInitGlobals;
+		LContext.Free;
 	end;
 end;
 
@@ -401,19 +412,19 @@ end;
 function ParseVariable(const ParseInput: String): String;
 var
 	LNode: TPNNode;
+	LContext: TParseContext;
 begin
-	InitGlobals(ParseInput);
+	LContext := TParseContext.Create(ParseInput);
 
 	try
-		LNode := ParseVariableName;
-		SkipWhiteSpace();
+		LNode := LContext.ParseVariableName;
 
-		if (LNode = nil) or IsWithinInput() then
-			ReportException(EInvalidVariableName, 'Invalid variable name ' + GInput);
+		if (LNode = nil) or not LContext.Finished() then
+			LContext.ReportException(EInvalidVariableName, 'Invalid variable name ' + ParseInput);
 
 		result := LNode.Item.VariableName;
 	finally
-		DeInitGlobals;
+		LContext.Free;
 	end;
 end;
 
