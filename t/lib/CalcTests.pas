@@ -33,6 +33,7 @@ type
 		procedure ExpTest();
 		procedure MinMaxTest();
 		procedure SumAvgTest();
+		procedure RangeTest();
 		procedure SignTest();
 		procedure AbsTest();
 		procedure RoundTest();
@@ -66,6 +67,7 @@ begin
 	Scenario(@self.ExpTest, 'should calculate exponent');
 	Scenario(@self.MinMaxTest, 'should calculate min/max');
 	Scenario(@self.SumAvgTest, 'should calculate sum/avg');
+	Scenario(@self.RangeTest, 'should handle ranges');
 	Scenario(@self.SignTest, 'should calculate sign of a variable');
 	Scenario(@self.AbsTest, 'should calculate absolute value');
 	Scenario(@self.RoundTest, 'should be able to perform rounding');
@@ -238,6 +240,27 @@ begin
 
 	FCalc.ParseString('avg 6, 8, 7, -3, 15, 0');
 	TestWithin(FCalc.GetResult, 33 / 6, cSmallPrecision, 'avg');
+end;
+
+procedure TCalculationsSuite.RangeTest();
+begin
+	FCalc.ParseString('sum 1 .. 1');
+	TestWithin(FCalc.GetResult, 1, cSmallPrecision, 'equal');
+
+	FCalc.ParseString('sum 1 .. 2');
+	TestWithin(FCalc.GetResult, 3, cSmallPrecision, 'higher');
+
+	FCalc.ParseString('sum 2 .. 1');
+	TestWithin(FCalc.GetResult, 0, cSmallPrecision, 'smaller');
+
+	FCalc.ParseString('sum 1 + 2 .. 2 + 2');
+	TestWithin(FCalc.GetResult, 7, cSmallPrecision, 'precedence (plus)');
+
+	FCalc.ParseString('sum 1 .. 3, 4');
+	TestWithin(FCalc.GetResult, 10, cSmallPrecision, 'precedence (comma)');
+
+	FCalc.ParseString('avg 1 .. 1000');
+	TestWithin(FCalc.GetResult, 500.5, cSmallPrecision, 'long list');
 end;
 
 procedure TCalculationsSuite.SignTest();

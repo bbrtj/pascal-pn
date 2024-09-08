@@ -30,7 +30,7 @@ function ParseVariable(const ParseInput: String): String;
 implementation // more internal interface below
 
 type
-	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctDecimalSeparator, ctBrace, ctSymbol);
+	TCharacterType = (ctWhiteSpace, ctLetter, ctDigit, ctBrace, ctSymbol);
 	TCleanupList = specialize TFPGObjectList<TPNNode>;
 
 	TParseContext = class
@@ -90,8 +90,6 @@ begin
 			FCharacterTypes[I] := ctLetter
 		else if IsDigit(LUnicodeStr[I + 1]) then
 			FCharacterTypes[I] := ctDigit
-		else if LUnicodeStr[I + 1] = cDecimalSeparator then
-			FCharacterTypes[I] := ctDecimalSeparator
 		else if (LUnicodeStr[I + 1] = '(') or (LUnicodeStr[I + 1] = ')') then
 			FCharacterTypes[I] := ctBrace
 		else

@@ -75,6 +75,22 @@ begin
 	Stack.AddToTop(List.Number);
 end;
 
+{ Handler for .. }
+procedure OpRange(Stack: TPNCalculationStack);
+var
+	LFrom, LTo: Int64;
+	I: Int64;
+begin
+	LFrom := Floor64(NextArg(Stack));
+	LTo := Floor64(NextArg(Stack));
+
+	// will push 0 if start is higher than stop
+	Stack.Push(LFrom * Ord(LFrom <= LTo));
+
+	for I := LFrom + 1 to LTo do
+		Stack.AddToTop(I);
+end;
+
 { Handler for unary - }
 procedure OpMinus(Stack: TPNCalculationStack);
 begin
@@ -362,6 +378,8 @@ begin
 	TOperationInfoStore.SList := [
 		TFullOperationInfo.Create(',',       @OpSeparator,       ocInfix,   5)
 			.WithHelp('separates values and creates a list'),
+		TFullOperationInfo.Create('..',      @OpRange,           ocInfix,   6)
+			.WithHelp('creates a range of integer numbers a .. b'),
 		TFullOperationInfo.Create('+',       @OpAddition,        ocInfix,   10)
 			.WithHelp('addition, a plus b'),
 		TFullOperationInfo.Create('-',       @OpSubtraction,     ocInfix,   10)
