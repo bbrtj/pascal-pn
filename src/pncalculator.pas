@@ -66,13 +66,18 @@ end;
 { Handler for separating , }
 procedure OpSeparator(Stack: TPNCalculationStack);
 var
-	List: TNumberList;
+	List, TopList: TNumberList;
+	Start, I: Int32;
 begin
 	List := NextList(Stack);
-	while List.Count > 1 do
-		Stack.AddToTop(List.Pop);
+	TopList := NextList(Stack);
+	Start := Length(TopList);
+	SetLength(TopList, Start + Length(List));
 
-	Stack.AddToTop(List.Number);
+	for I := 0 to High(List) do
+		TopList[Start + I] := List[I];
+
+	Stack.PushList(TopList);
 end;
 
 { Handler for .. }
@@ -80,15 +85,20 @@ procedure OpRange(Stack: TPNCalculationStack);
 var
 	LFrom, LTo: Int64;
 	I: Int64;
+	LList: TNumberList;
 begin
 	LFrom := Floor64(NextArg(Stack));
 	LTo := Floor64(NextArg(Stack));
 
-	// will push 0 if start is higher than stop
-	Stack.Push(LFrom * Ord(LFrom <= LTo));
+	if LFrom > LTo then
+		SetLength(LList, 0)
+	else
+		SetLength(LList, LTo - LFrom + 1);
 
-	for I := LFrom + 1 to LTo do
-		Stack.AddToTop(I);
+	for I := 0 to LTo - LFrom do
+		LList[I] := LFrom + I;
+
+	Stack.PushList(LList);
 end;
 
 { Handler for unary - }
@@ -109,10 +119,10 @@ var
 	List: TNumberList;
 begin
 	List := NextList(Stack);
-	if List.Count <> 2 then
-		raise EStackError.Create('Expected list of 2 elements, got ' + IntToStr(List.Count));
+	if Length(List) <> 2 then
+		raise EStackError.Create('Expected list of 2 elements, got ' + IntToStr(Length(List)));
 
-	Stack.Push(LogN(List.Pop, List.Number));
+	Stack.Push(LogN(List[1], List[0]));
 end;
 
 { Handler for + }
@@ -217,12 +227,17 @@ procedure OpMin(Stack: TPNCalculationStack);
 var
 	List: TNumberList;
 	LMin: TNumber;
+	I: Int32;
 begin
 	List := NextList(Stack);
 
-	LMin := List.Number;
-	while List.Count > 1 do
-		LMin := Min(LMin, List.Pop);
+	if Length(List) > 0 then
+		LMin := List[0]
+	else
+		LMin := 0;
+
+	for I := 1 to High(List) do
+		LMin := Min(LMin, List[I]);
 
 	Stack.Push(LMin);
 end;
@@ -232,12 +247,17 @@ procedure OpMax(Stack: TPNCalculationStack);
 var
 	List: TNumberList;
 	LMax: TNumber;
+	I: Int32;
 begin
 	List := NextList(Stack);
 
-	LMax := List.Number;
-	while List.Count > 1 do
-		LMax := Max(LMax, List.Pop);
+	if Length(List) > 0 then
+		LMax := List[0]
+	else
+		LMax := 0;
+
+	for I := 1 to High(List) do
+		LMax := Max(LMax, List[I]);
 
 	Stack.Push(LMax);
 end;
@@ -247,12 +267,13 @@ procedure OpSum(Stack: TPNCalculationStack);
 var
 	List: TNumberList;
 	LSum: TNumber;
+	I: Int32;
 begin
 	List := NextList(Stack);
 
-	LSum := List.Number;
-	while List.Count > 1 do
-		LSum += List.Pop;
+	LSum := 0;
+	for I := 0 to High(List) do
+		LSum += List[I];
 
 	Stack.Push(LSum);
 end;
@@ -263,15 +284,19 @@ var
 	List: TNumberList;
 	LSum: TNumber;
 	LCount: UInt32;
+	I: Int32;
 begin
 	List := NextList(Stack);
 
-	LSum := List.Number;
-	LCount := List.Count;
-	while List.Count > 1 do
-		LSum += List.Pop;
+	LCount := Length(List);
+	LSum := 0;
+	for I := 0 to High(List) do
+		LSum += List[I];
 
-	Stack.Push(LSum / LCount);
+	if LCount > 0 then
+		Stack.Push(LSum / LCount)
+	else
+		Stack.Push(0);
 end;
 
 { Handler for function round }

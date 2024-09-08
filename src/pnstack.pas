@@ -1,7 +1,6 @@
 unit PNStack;
 
 {$mode objfpc}{$H+}{$J-}
-{$modeswitch advancedrecords}
 
 {
 	Stack implementation, the main data structure used by PN
@@ -40,23 +39,16 @@ type
 		function ToArray(): TItemArray;
 	end;
 
+	TNumberList = Array of TNumber;
 	PNumberList = ^TNumberList;
-	TNumberList = record
-		Number: TNumber;
-		NextNumber: PNumberList;
-
-		class operator Initialize(var Rec: TNumberList);
-		function Count(): UInt32;
-		procedure Push(ANumber: TNumber);
-		function Pop(): TNumber;
-	end;
 
 	TPNCalculationStack = class(TPNBaseStack)
 	public
 		destructor Destroy; override;
 
 		procedure Push(Item: TNumber);
-		procedure AddToTop(Item: TNumber);
+		procedure PushList(Item: TNumberList);
+		function Top(): TNumberList;
 		function PopList(): TNumberList;
 		function Pop(): TNumber;
 	end;
@@ -191,61 +183,12 @@ begin
 	end;
 end;
 
-class operator TNumberList.Initialize(var Rec: TNumberList);
-begin
-	Rec.NextNumber := nil;
-end;
-
-function TNumberList.Count(): UInt32;
-var
-	LNext: PNumberList;
-begin
-	result := 1;
-	LNext := self.NextNumber;
-	while LNext <> nil do begin
-		Inc(result);
-		LNext := LNext^.NextNumber;
-	end;
-end;
-
-procedure TNumberList.Push(ANumber: TNumber);
-var
-	LRes: PNumberList;
-	LTop: PNumberList;
-begin
-	LTop := @self;
-	while LTop^.NextNumber <> nil do
-		LTop := LTop^.NextNumber;
-
-	New(LRes);
-	LRes^.Number := ANumber;
-	LTop^.NextNumber := LRes;
-end;
-
-function TNumberList.Pop(): TNumber;
-var
-	LLast, LTop: PNumberList;
-begin
-	LLast := @self;
-	LTop := self.NextNumber;
-	while LTop^.NextNumber <> nil do begin
-		LLast := LTop;
-		LTop := LTop^.NextNumber;
-	end;
-
-	LLast^.NextNumber := nil;
-	result := LTop^.Number;
-	Dispose(LTop);
-end;
-
 destructor TPNCalculationStack.Destroy;
 var
 	LRes: TNumberList;
 begin
 	while not self.Empty do begin
 		LRes := self.PopList;
-		while LRes.Count > 1 do
-			LRes.Pop;
 	end;
 
 	inherited;
@@ -254,41 +197,51 @@ end;
 { Pushes on top of the stack }
 procedure TPNCalculationStack.Push(Item: TNumber);
 var
-	LRes: PNumberList;
+	LPtr: PNumberList;
 begin
-	New(LRes);
-	LRes^.Number := Item;
-	inherited Push(LRes);
+	New(LPtr);
+	SetLength(LPtr^, 1);
+	LPtr^[0] := Item;
+	inherited Push(LPtr);
 end;
 
-procedure TPNCalculationStack.AddToTop(Item: TNumber);
+procedure TPNCalculationStack.PushList(Item: TNumberList);
+var
+	LPtr: PNumberList;
 begin
-	PNumberList(self.Peek)^.Push(Item);
+	New(LPtr);
+	LPtr^ := Item;
+	inherited Push(LPtr);
+end;
+
+function TPNCalculationStack.Top(): TNumberList;
+var
+	LPtr: PNumberList;
+begin
+	LPtr := PNumberList(inherited Peek());
+	result := LPtr^;
 end;
 
 function TPNCalculationStack.PopList(): TNumberList;
 var
-	LRes: PNumberList;
+	LPtr: PNumberList;
 begin
-	LRes := PNumberList(inherited Pop());
-
-	result := LRes^;
-	Dispose(LRes);
+	LPtr := PNumberList(inherited Pop());
+	result := LPtr^;
+	Dispose(LPtr);
 end;
 
 { Pops the top of the stack }
 function TPNCalculationStack.Pop(): TNumber;
 var
-	LRes: PNumberList;
+	LList: TNumberList;
 begin
-	LRes := PNumberList(inherited Pop());
-	if LRes^.Count > 1 then begin
-		inherited Push(LRes);
+	LList := self.PopList;
+	if Length(LList) <> 1 then begin
 		raise ENotAggregated.Create('A list was found where a number was expected');
 	end;
 
-	result := LRes^.Number;
-	Dispose(LRes);
+	result := LList[0];
 end;
 
 end.
