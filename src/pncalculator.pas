@@ -67,17 +67,11 @@ end;
 procedure OpSeparator(Stack: TPNCalculationStack);
 var
 	List, TopList: TNumberList;
-	Start, I: Int32;
 begin
 	List := NextList(Stack);
 	TopList := NextList(Stack);
-	Start := Length(TopList);
-	SetLength(TopList, Start + Length(List));
 
-	for I := 0 to High(List) do
-		TopList[Start + I] := List[I];
-
-	Stack.PushList(TopList);
+	Stack.PushList(Concat(TopList, List));
 end;
 
 { Handler for .. }
