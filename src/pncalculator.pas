@@ -216,6 +216,14 @@ begin
 	Stack.Push(Random(Floor64(NextArg(Stack))));
 end;
 
+procedure OpCount(Stack: TPNCalculationStack);
+var
+	List: TNumberList;
+begin
+	List := NextList(Stack);
+	Stack.Push(Length(List));
+end;
+
 { Handler for function min }
 procedure OpMin(Stack: TPNCalculationStack);
 var
@@ -457,6 +465,8 @@ begin
 		TFullOperationInfo.Create('exp',     @OpExp,             ocPrefix,  2)
 			.WithHelp('f(x), returns exponent of x'),
 
+		TFullOperationInfo.Create('count',   @OpCount,           ocPrefix,  2)
+			.WithHelp('f(list), the number of elements in a list'),
 		TFullOperationInfo.Create('min',     @OpMin,             ocPrefix,  2)
 			.WithHelp('f(list), smallest value in a list'),
 		TFullOperationInfo.Create('max',     @OpMax,             ocPrefix,  2)

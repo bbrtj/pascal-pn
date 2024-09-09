@@ -31,6 +31,7 @@ type
 		procedure IntegerDivisionTest();
 		procedure FactorialTest();
 		procedure ExpTest();
+		procedure CountTest();
 		procedure MinMaxTest();
 		procedure SumAvgTest();
 		procedure RangeTest();
@@ -65,6 +66,7 @@ begin
 	Scenario(@self.IntegerDivisionTest, 'should be able to perform integer division');
 	Scenario(@self.FactorialTest, 'should calculate factorial');
 	Scenario(@self.ExpTest, 'should calculate exponent');
+	Scenario(@self.CountTest, 'should calculate count');
 	Scenario(@self.MinMaxTest, 'should calculate min/max');
 	Scenario(@self.SumAvgTest, 'should calculate sum/avg');
 	Scenario(@self.RangeTest, 'should handle ranges');
@@ -216,6 +218,21 @@ procedure TCalculationsSuite.ExpTest();
 begin
 	FCalc.ParseString('exp 19');
 	TestWithin(FCalc.GetResult, Exp(19), cSmallPrecision, 'exponent');
+end;
+
+procedure TCalculationsSuite.CountTest();
+begin
+	FCalc.ParseString('count 2, 3, 4');
+	TestWithin(FCalc.GetResult, 3, cSmallPrecision, 'count 3');
+
+	FCalc.ParseString('count 1 .. 0');
+	TestWithin(FCalc.GetResult, 0, cSmallPrecision, 'count 0');
+
+	FCalc.ParseString('count 15');
+	TestWithin(FCalc.GetResult, 1, cSmallPrecision, 'count 1');
+
+	FCalc.ParseString('count 1 .. 100');
+	TestWithin(FCalc.GetResult, 100, cSmallPrecision, 'count 100');
 end;
 
 procedure TCalculationsSuite.MinMaxTest();
