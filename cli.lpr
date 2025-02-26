@@ -118,6 +118,8 @@ var
 	SingleVar: TVariable;
 
 begin
+	Randomize;
+
 	try try
 		Args := ReadArguments();
 
