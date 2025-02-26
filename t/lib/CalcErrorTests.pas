@@ -19,6 +19,7 @@ type
 		procedure TearDown(); override;
 
 		procedure InvalidListTest();
+		procedure TooLongListTest();
 	end;
 
 
@@ -43,6 +44,7 @@ begin
 	inherited;
 
 	Scenario(@self.InvalidListTest, 'should reject lists when a number is expected');
+	Scenario(@self.TooLongListTest, 'should not create lists which are too big in length');
 end;
 
 procedure TCalcErrorSuite.Setup();
@@ -58,6 +60,12 @@ end;
 procedure TCalcErrorSuite.InvalidListTest();
 begin
 	self.TestForException('2, 2', ENotAggregated);
+end;
+
+procedure TCalcErrorSuite.TooLongListTest();
+begin
+	self.TestForException('min 0 .. 1000000', ECalculationFailed);
+	self.TestForException('min 0, 0 .. 999999', ECalculationFailed);
 end;
 
 end.

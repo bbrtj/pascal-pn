@@ -39,9 +39,6 @@ type
 		function ToArray(): TItemArray;
 	end;
 
-	TNumberList = Array of TNumber;
-	PNumberList = ^TNumberList;
-
 	TPNCalculationStack = class(TPNBaseStack)
 	public
 		destructor Destroy; override;

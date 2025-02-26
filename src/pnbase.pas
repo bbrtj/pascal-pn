@@ -19,6 +19,9 @@ type
 	TVariableName = type String[20];
 	TOperatorName = type String[20];
 
+	TNumberList = Array of TNumber;
+	PNumberList = ^TNumberList;
+
 	TVariableMap = specialize TFPGMap<TVariableName, TNumber>;
 
 	TOperationCategory = (ocPrefix, ocInfix);

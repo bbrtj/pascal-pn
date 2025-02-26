@@ -46,6 +46,9 @@ type
 
 implementation
 
+const
+	CMaxListLength = 1000000;
+
 { Get the next argument from the stack, raise an exception if not possible }
 function NextArg(Stack: TPNCalculationStack): TNumber;
 begin
@@ -71,6 +74,9 @@ begin
 	List := NextList(Stack);
 	TopList := NextList(Stack);
 
+	if Length(List) + Length(TopList) > CMaxListLength then
+		raise EStackError.Create('List exceeded the maximum length');
+
 	Stack.PushList(Concat(TopList, List));
 end;
 
@@ -83,6 +89,9 @@ var
 begin
 	LFrom := Floor64(NextArg(Stack));
 	LTo := Floor64(NextArg(Stack));
+
+	if LTo - LFrom + 1 > CMaxListLength then
+		raise EStackError.Create('List exceeded the maximum length');
 
 	if LFrom > LTo then
 		SetLength(LList, 0)
