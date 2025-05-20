@@ -41,8 +41,9 @@
           </Linking>
         </CompilerOptions>
       </Item>
-      <SharedMatrixOptions Count="1">
+      <SharedMatrixOptions Count="2">
         <Item1 ID="389642170285" Modes="Release" Value="-B"/>
+        <Item2 ID="943866193821" Modes="Release" Value="-dRELEASE"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>

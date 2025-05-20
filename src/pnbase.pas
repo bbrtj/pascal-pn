@@ -2,6 +2,8 @@ unit PNBase;
 
 {$mode objfpc}{$H+}{$J-}
 
+{$ifdef RELEASE}{$optimization autoinline}{$endif}
+
 {
 	Base types used by the Polish Notation implementation
 }
@@ -91,7 +93,7 @@ var
 	GFloatFormat: TFormatSettings;
 
 { private, helper }
-function CharToInt(const Digit: Char): Int8; Inline;
+function CharToInt(const Digit: Char): Int8;
 begin
 	case Digit of
 		'0': result := 0;
@@ -116,7 +118,7 @@ begin
 end;
 
 { private, helper }
-function DigitsFromStr(const Txt: String; var Offset: UInt32; Base: UInt8 = 10): TNumber; Inline;
+function DigitsFromStr(const Txt: String; var Offset: UInt32; Base: UInt8 = 10): TNumber;
 var
 	I: UInt32;
 	LDigit: Int8;

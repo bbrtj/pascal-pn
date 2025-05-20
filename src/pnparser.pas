@@ -2,6 +2,8 @@ unit PNParser;
 
 {$mode objfpc}{$H+}{$J-}
 
+{$ifdef RELEASE}{$optimization autoinline}{$endif}
+
 {
 	Code responsible for transforming a string into a PN stack
 
@@ -41,12 +43,12 @@ type
 		FCleanup: TCleanupList;
 		FCharacterTypes: Array of TCharacterType;
 
-		function ManagedNode(Item: TItem; FoundAt: Int32): TPNNode; Inline;
-		function SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean; Inline;
-		procedure SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String); Inline;
-		function IsWithinInput(): Boolean; Inline;
-		function CharacterType(Position: UInt32): TCharacterType; Inline;
-		procedure SkipWhiteSpace(); Inline;
+		function ManagedNode(Item: TItem; FoundAt: Int32): TPNNode;
+		function SuccessBacktrack(Parsed: TPNNode; Backtrack: UInt32): Boolean;
+		procedure SuccessException(Parsed: TPNNode; AClass: TParsingFailedClass; const ExMsg: String);
+		function IsWithinInput(): Boolean;
+		function CharacterType(Position: UInt32): TCharacterType;
+		procedure SkipWhiteSpace();
 
 	public
 		constructor Create(const ParseInput: String);
@@ -285,7 +287,7 @@ var
 	LPartialResult, LOp, LFirst: TPNNode;
 	LAtBacktrack: UInt32;
 
-	function IsLowerPriority(Compare, Against: TPNNode): Boolean; Inline;
+	function IsLowerPriority(Compare, Against: TPNNode): Boolean;
 	begin
 		result := (Compare <> nil) and (Compare.Left <> nil)
 			and Compare.IsOperation and (not Compare.Grouped)
