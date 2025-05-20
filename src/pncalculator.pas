@@ -113,7 +113,7 @@ end;
 { Handler for function ln }
 procedure OpLogN(Stack: TPNCalculationStack);
 begin
-	Stack.Push(LnXP1(NextArg(Stack)));
+	Stack.Push(LogN(Exp(1), NextArg(Stack)));
 end;
 
 { Handler for function log }

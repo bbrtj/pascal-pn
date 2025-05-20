@@ -146,7 +146,7 @@ end;
 procedure TCalculationsSuite.LogarithmTest();
 begin
 	FCalc.ParseString('ln 132');
-	TestWithin(FCalc.GetResult, LnXP1(132), cSmallPrecision);
+	TestWithin(FCalc.GetResult, LogN(Exp(1), 132), cSmallPrecision);
 
 	FCalc.ParseString('log(2, 256)');
 	TestWithin(FCalc.GetResult, LogN(2, 256), cSmallPrecision);
