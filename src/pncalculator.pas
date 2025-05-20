@@ -442,9 +442,9 @@ begin
 		TFullOperationInfo.Create('sqrt',    @OpSqrt,            ocPrefix,  2)
 			.WithHelp('f(x), square root of x'),
 		TFullOperationInfo.Create('ln',      @OpLogN,            ocPrefix,  2)
-			.WithHelp('f(x, y), x-based logarithm of y'),
-		TFullOperationInfo.Create('log',     @OpLog,             ocPrefix,  2)
 			.WithHelp('f(x), natural logarithm of x (E-based)'),
+		TFullOperationInfo.Create('log',     @OpLog,             ocPrefix,  2)
+			.WithHelp('f(x, y), x-based logarithm of y'),
 		TFullOperationInfo.Create('sin',     @OpSin,             ocPrefix,  2)
 			.WithHelp('f(x), sinus of x'),
 		TFullOperationInfo.Create('cos',     @OpCos,             ocPrefix,  2)
